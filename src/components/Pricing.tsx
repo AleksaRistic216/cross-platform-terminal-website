@@ -13,7 +13,7 @@ const included = [
   "All future updates included",
 ];
 
-type ModalState = "closed" | "email" | "payment" | "success" | "polling";
+type ModalState = "closed" | "email" | "payment" | "success";
 
 export default function Pricing() {
   const [modal, setModal] = useState<ModalState>("closed");
@@ -22,10 +22,8 @@ export default function Pricing() {
   const [discountPercent, setDiscountPercent] = useState(0);
   const [finalAmount, setFinalAmount] = useState(8);
   const [embedUrl, setEmbedUrl] = useState("");
-  const [licenseKey, setLicenseKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [copied, setCopied] = useState(false);
 
   function closeModal() {
     setModal("closed");
@@ -34,37 +32,7 @@ export default function Pricing() {
     setDiscountPercent(0);
     setFinalAmount(8);
     setEmbedUrl("");
-    setLicenseKey("");
     setError("");
-    setCopied(false);
-  }
-
-  function copyKey() {
-    navigator.clipboard.writeText(licenseKey).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  }
-
-  async function startPolling() {
-    setModal("polling");
-    setError("");
-    const deadline = Date.now() + 3 * 60 * 1000; // 3 minutes
-    while (Date.now() < deadline) {
-      await new Promise((r) => setTimeout(r, 4000));
-      try {
-        const res = await fetch(`/api/get-license?email=${encodeURIComponent(email)}`);
-        const data = await res.json();
-        if (data.key) {
-          setLicenseKey(data.key);
-          setModal("success");
-          return;
-        }
-      } catch {
-        // network hiccup — keep polling
-      }
-    }
-    setError("Payment not confirmed yet. Please wait a moment and try again.");
   }
 
   async function handleProceed() {
@@ -83,7 +51,6 @@ export default function Pricing() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to create invoice");
       if (data.free) {
-        setLicenseKey(data.key);
         setModal("success");
         return;
       }
@@ -228,7 +195,7 @@ export default function Pricing() {
                 Enter your email
               </h3>
               <p className="text-sm mb-5" style={{ color: "var(--color-muted)" }}>
-                Your license key will be sent to this address after payment.
+                Your sign-in details will be sent to this address after payment.
               </p>
 
               <input
@@ -275,7 +242,7 @@ export default function Pricing() {
             </div>
           )}
 
-          {/* Success — show license key */}
+          {/* Success — credentials are emailed; nothing secret is rendered here */}
           {modal === "success" && (
             <div
               className="relative rounded-2xl p-8 w-full max-w-sm text-center"
@@ -290,68 +257,20 @@ export default function Pricing() {
                 </svg>
               </div>
               <h3 className="text-lg font-semibold mb-2" style={{ color: "var(--color-foreground)" }}>
-                License granted!
+                Check your email
               </h3>
-              <p className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>
-                Enter this key in the app under <strong style={{ color: "var(--color-foreground)" }}>Settings → License</strong>.
+              <p className="text-sm mb-6" style={{ color: "var(--color-muted)" }}>
+                We&apos;ve sent your sign-in details to{" "}
+                <strong style={{ color: "var(--color-foreground)" }}>{email}</strong>. Open the app
+                and sign in when prompted.
               </p>
-              <div className="relative mb-6">
-                <div
-                  className="px-4 py-3 rounded-lg text-xs font-mono select-all break-all pr-10"
-                  style={{ background: "var(--color-background)", border: "1px solid var(--color-border)", color: "var(--color-foreground)" }}
-                >
-                  {licenseKey}
-                </div>
-                <button
-                  onClick={copyKey}
-                  className="absolute top-2 right-2 w-7 h-7 flex items-center justify-center rounded"
-                  style={{ background: "var(--color-border)", color: copied ? "var(--color-accent)" : "var(--color-muted)" }}
-                  title="Copy to clipboard"
-                >
-                  {copied ? (
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                    </svg>
-                  ) : (
-                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                    </svg>
-                  )}
-                </button>
-              </div>
-              <button
-                onClick={copyKey}
-                className="w-full py-2.5 rounded-lg font-semibold text-sm mb-2 transition-opacity"
-                style={{ background: "var(--color-accent)", color: "#fff" }}
-              >
-                {copied ? "Copied!" : "Copy License Key"}
-              </button>
               <button
                 onClick={closeModal}
-                className="w-full py-2 rounded-lg text-sm"
-                style={{ color: "var(--color-muted)" }}
+                className="w-full py-2.5 rounded-lg font-semibold text-sm"
+                style={{ background: "var(--color-accent)", color: "#fff" }}
               >
                 Done
               </button>
-            </div>
-          )}
-
-          {/* Polling — waiting for webhook after paid payment */}
-          {modal === "polling" && (
-            <div
-              className="relative rounded-2xl p-8 w-full max-w-sm text-center"
-              style={{ background: "var(--color-surface)" }}
-            >
-              <p className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>
-                Confirming your payment…
-              </p>
-              <div className="flex justify-center mb-4">
-                <svg className="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24" style={{ color: "var(--color-accent)" }}>
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                </svg>
-              </div>
-              {error && <p className="text-xs" style={{ color: "#e06040" }}>{error}</p>}
             </div>
           )}
 
@@ -387,11 +306,11 @@ export default function Pricing() {
                 />
               </div>
               <button
-                onClick={() => startPolling()}
+                onClick={() => setModal("success")}
                 className="mt-2 w-full py-2 rounded-lg text-sm font-medium transition-opacity"
                 style={{ background: "var(--color-surface)", border: "1px solid var(--color-border)", color: "var(--color-muted)" }}
               >
-                I&apos;ve paid — show my license key
+                I&apos;ve paid
               </button>
             </div>
           )}

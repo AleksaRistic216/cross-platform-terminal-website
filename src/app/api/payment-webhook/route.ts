@@ -1,5 +1,5 @@
 import { NowPaymentsSDK } from "@nowpaymentsio/nowpayments-sdk-nodejs";
-import { createLicense } from "@/lib/keygen";
+import { provisionPurchase } from "@/lib/provision";
 
 const sdk = new NowPaymentsSDK({
   ipnSecret: process.env.NOWPAYMENTS_IPN_SECRET!,
@@ -27,11 +27,17 @@ export async function POST(request: Request) {
   }
 
   try {
-    await createLicense(String(email));
-    console.log(`[webhook] License created for ${email} (payment ${event.payment.payment_id})`);
+    const { alreadyProvisioned } = await provisionPurchase(String(email));
+    console.log(
+      alreadyProvisioned
+        ? `[webhook] ${email} already provisioned (payment ${event.payment.payment_id})`
+        : `[webhook] Provisioned ${email} (payment ${event.payment.payment_id})`
+    );
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
-    console.error("[webhook] License creation failed:", msg);
+    console.error("[webhook] Provisioning failed:", msg);
+    // A non-2xx makes NOWPayments retry, which is what we want here: provisioning is idempotent,
+    // and a paid customer with no account is worse than a repeated delivery attempt.
     return Response.json({ error: msg }, { status: 500 });
   }
 

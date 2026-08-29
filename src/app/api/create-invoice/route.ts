@@ -1,5 +1,5 @@
 import { NowPaymentsSDK } from "@nowpaymentsio/nowpayments-sdk-nodejs";
-import { createLicense } from "@/lib/keygen";
+import { provisionPurchase } from "@/lib/provision";
 
 const sdk = new NowPaymentsSDK({
   apiKey: process.env.NOWPAYMENTS_API_KEY!,
@@ -35,14 +35,14 @@ export async function POST(request: Request) {
     discountPercent = pct;
   }
 
-  // 100% discount — grant license immediately, return key to show on UI
+  // 100% discount — provision immediately, no payment to wait for
   if (discountPercent >= 100) {
     try {
-      const key = await createLicense(String(email));
-      return Response.json({ free: true, key });
+      await provisionPurchase(String(email));
+      return Response.json({ free: true, emailed: true });
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      console.error("[create-invoice] Free license grant failed:", msg);
+      console.error("[create-invoice] Free provisioning failed:", msg);
       return Response.json({ error: msg }, { status: 500 });
     }
   }
