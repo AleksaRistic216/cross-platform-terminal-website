@@ -1,8 +1,10 @@
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
 import Pillars from "@/components/Pillars";
+import Features from "@/components/Features";
 import CrossPlatform from "@/components/CrossPlatform";
 import Pricing from "@/components/Pricing";
+import FAQ from "@/components/FAQ";
 import Footer from "@/components/Footer";
 
 const jsonLd = {
@@ -13,16 +15,14 @@ const jsonLd = {
   operatingSystem: "Linux, Windows, macOS",
   description:
     "GPU-accelerated cross-platform terminal and developer workspace with dockable panels, AI workflow integration for Claude Code and GitHub Copilot, and automatic cross-platform quirks resolution.",
+  // A single perpetual licence, bought once. Deliberately not a UnitPriceSpecification: there is no
+  // recurring billing anywhere in the checkout, and describing one to search engines advertises a
+  // subscription that does not exist.
   offers: {
     "@type": "Offer",
     price: "8",
     priceCurrency: "EUR",
-    priceSpecification: {
-      "@type": "UnitPriceSpecification",
-      price: "8",
-      priceCurrency: "EUR",
-      unitText: "MONTH",
-    },
+    availability: "https://schema.org/InStock",
   },
   featureList: [
     "GPU-accelerated terminal rendering",
@@ -46,8 +46,10 @@ export default function Home() {
       <main>
         <Hero />
         <Pillars />
+        <Features />
         <CrossPlatform />
         <Pricing />
+        <FAQ />
       </main>
       <Footer />
     </>

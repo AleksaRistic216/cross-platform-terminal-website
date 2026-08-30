@@ -1,36 +1,43 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Cross Platform Terminal — marketing site
 
-## Getting Started
+The public site for Cross Platform Terminal (CPT): landing page, download page, and the checkout
+that provisions a licence.
 
-First, run the development server:
+Built with Next.js 16 (App Router, Turbopack) and Tailwind CSS 4. Deployed on Vercel.
+
+## Running locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev     # http://localhost:3000
+npm run build   # production build
+npm run lint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Checkout and provisioning need these set (see `.env`):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Purpose |
+|---|---|
+| `NOWPAYMENTS_API_KEY` / `NOWPAYMENTS_IPN_SECRET` | Crypto checkout and webhook signature |
+| `INTER_APP_API_KEY` | Auth for the Client API — server only, never expose |
+| `CLIENT_API_BASE_URL` | Client API host (defaults to the production one) |
+| `CPT_APPLICATION_ID` / `CPT_LICENCE_ID` | Which application and licence tier to grant |
+| `CLIENT_PORTAL_URL` | Where existing customers manage their account |
+| `RESEND_API_KEY` / `RESEND_FROM` | Licence emails |
+| `DISCOUNT_CODES` | `CODE:PERCENT,CODE:PERCENT`; 100% provisions without payment |
+| `GITHUB_TOKEN` | Optional. Lifts the rate limit on the release lookup |
+| `NEXT_PUBLIC_SITE_URL` | Canonical origin for metadata, sitemap and robots |
 
-## Learn More
+## What the product costs
 
-To learn more about Next.js, take a look at the following resources:
+One payment of €8 for a perpetual licence — `grantLicence` sets `expiresAt: null` and there is no
+recurring billing anywhere in the checkout. Anything on the site that describes a subscription is a
+bug; see `src/components/FAQ.tsx`, whose answers are sourced from `src/lib/`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Docs
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [`docs/architecture.md`](docs/architecture.md) — routes, component tree, checkout flow
+- [`docs/deployment.md`](docs/deployment.md) — deploying
+- [`docs/screenshots.md`](docs/screenshots.md) — the screenshot pipeline

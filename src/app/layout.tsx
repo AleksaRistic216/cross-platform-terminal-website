@@ -13,9 +13,25 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Cross Platform Terminal (CPT) - Developer Workspace for Linux, Windows & macOS",
+  // Same host as sitemap.ts and robots.ts — a mismatch here makes every canonical and og:url
+  // point at a different origin than the one being indexed.
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL || "https://www.crossplatformterminal.com"
+  ),
+  title: {
+    default: "Cross Platform Terminal (CPT) - Developer Workspace for Linux, Windows & macOS",
+    template: "%s | Cross Platform Terminal",
+  },
   description:
-    "Cross Platform Terminal (CPT) is a cross-platform terminal and developer workspace with dockable panels and AI workflow integration for Claude Code and GitHub Copilot. Runs on Linux, Windows, and macOS.",
+    "A GPU-accelerated terminal and dockable developer workspace that behaves identically on Linux, Windows and macOS. AI workflow integration for Claude Code and GitHub Copilot. One-time \u20ac8 licence.",
+  openGraph: {
+    type: "website",
+    siteName: "Cross Platform Terminal",
+    title: "One workspace. Every platform.",
+    description:
+      "A GPU-accelerated terminal and dockable developer workspace with the same shortcuts and layout on every OS. One-time \u20ac8 licence, no subscription.",
+  },
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({

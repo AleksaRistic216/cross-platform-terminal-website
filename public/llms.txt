@@ -10,24 +10,33 @@ Cross Platform Terminal (CPT) is a GPU-accelerated terminal emulator and develop
 
 - **GPU-accelerated rendering**: The entire terminal grid renders in a single GPU draw call. Smooth scrolling at any size with no CPU overhead.
 - **Full VT support**: PTY-backed terminal emulator with tabbed sessions and scrollback. Works out of the box with no quirks.
-- **Dockable panels and widgets**: Unlimited views, file browser widget, and a fully configurable layout.
-- **AI Workflow Pipeline**: Native integration with Claude Code and GitHub Copilot. Automatic AI tool detection with status badge.
+- **Dockable panels and widgets**: Unlimited views, file browser widget, and a fully configurable layout. Each view keeps its own independent dock layout.
+- **AI Workflow Pipeline**: Native integration with Claude Code and GitHub Copilot. Automatic AI tool detection with a live status badge showing tool name and token count.
 - **Cross-platform quirks resolution**: Rendering glitches, escape sequence mismatches, and input edge cases are caught and fixed automatically.
-- **1-day bugfix guarantee**: Bugs reported by subscribers are fixed and shipped within one business day.
+- **1-day bugfix guarantee**: Reported bugs are fixed and shipped within one business day.
 - **In-app auto-update**: Always on the latest version without manual downloads.
 
 ## Platforms
 
 - Linux (AppImage and tar.gz)
-- Windows
+- Windows (ZIP, no installer)
 - macOS (coming soon)
+
+## Licensing
+
+CPT requires a licence to run, from the first launch. The builds are publicly downloadable, but the
+app asks you to sign in the first time you open it, and it needs a licence on that account to go
+further. There is no trial and no free tier.
 
 ## Pricing
 
-- **€8/month** — Pro plan, everything included, cancel any time.
-- All future updates included in the subscription.
+- **€8, paid once.** This is not a subscription: the licence is perpetual, never expires, and there is nothing to renew or cancel.
+- All future updates are included at no extra cost.
+- The licence covers one account. Devices can be released and moved from the licence dialog in the app.
+- Payment is by crypto, through NOWPayments. Sign-in details are emailed after the payment confirms.
+- All sales are final. Crypto payments cannot be reversed, so there are no refunds.
 
 ## Pages
 
-- [Homepage](/) — Overview, features, and pricing
+- [Homepage](/) — Overview, features, pricing, and FAQ
 - [Download](/download) — Download links for all platforms

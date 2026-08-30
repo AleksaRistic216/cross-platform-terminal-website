@@ -86,50 +86,6 @@ export default function CrossPlatform() {
           </p>
         </div>
 
-        {/* Shortcut table */}
-        <div
-          className="rounded-xl border overflow-hidden mb-16 max-w-lg mx-auto"
-          style={{ borderColor: "var(--color-border)" }}
-        >
-          <div
-            className="grid grid-cols-2 px-5 py-2.5 border-b text-xs font-semibold uppercase tracking-widest"
-            style={{ background: "var(--color-surface-2)", borderColor: "var(--color-border)", color: "var(--color-muted)" }}
-          >
-            <span>Action</span>
-            <span>Shortcut</span>
-          </div>
-          {shortcuts.map((s, i) => (
-            <div
-              key={s.action}
-              className="grid grid-cols-2 px-5 py-3 items-center text-sm border-b last:border-b-0"
-              style={{
-                borderColor: "var(--color-border)",
-                background: i % 2 === 0 ? "var(--color-surface)" : "transparent",
-              }}
-            >
-              <span style={{ color: "var(--color-muted)" }}>{s.action}</span>
-              <span
-                className="font-mono text-xs px-2 py-0.5 rounded justify-self-start"
-                style={{ background: "var(--color-surface-2)", color: "var(--color-foreground)" }}
-              >
-                {s.keys}
-              </span>
-            </div>
-          ))}
-          <div
-            className="px-5 py-2.5 text-xs"
-            style={{ background: "var(--color-surface-2)", color: "var(--color-muted)" }}
-          >
-            All rebindable in Settings → Keyboard Shortcuts or{" "}
-            <code
-              className="font-mono px-1 rounded text-[11px]"
-              style={{ background: "var(--color-border)", color: "var(--color-foreground)" }}
-            >
-              shortcuts.json
-            </code>
-          </div>
-        </div>
-
         {/* Platform quirks */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {quirks.map((platform) => (
@@ -176,6 +132,68 @@ export default function CrossPlatform() {
             </div>
           ))}
         </div>
+
+        {/* Shortcut table — reference material, folded away by default. */}
+        <details className="max-w-lg mx-auto mt-16 group">
+          <summary
+            className="cursor-pointer list-none flex items-center justify-center gap-2 text-sm rounded-lg border px-4 py-2.5 cpt-quiet"
+            style={{ borderColor: "var(--color-border)", color: "var(--color-muted)" }}
+          >
+            <span>See the full shortcut table</span>
+            <svg
+              className="w-4 h-4 transition-transform group-open:rotate-180"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </summary>
+
+        <div
+          className="rounded-xl border overflow-hidden mt-4"
+          style={{ borderColor: "var(--color-border)" }}
+        >
+          <div
+            className="grid grid-cols-2 px-5 py-2.5 border-b text-xs font-semibold uppercase tracking-widest"
+            style={{ background: "var(--color-surface-2)", borderColor: "var(--color-border)", color: "var(--color-muted)" }}
+          >
+            <span>Action</span>
+            <span>Shortcut</span>
+          </div>
+          {shortcuts.map((s, i) => (
+            <div
+              key={s.action}
+              className="grid grid-cols-2 px-5 py-3 items-center text-sm border-b last:border-b-0"
+              style={{
+                borderColor: "var(--color-border)",
+                background: i % 2 === 0 ? "var(--color-surface)" : "transparent",
+              }}
+            >
+              <span style={{ color: "var(--color-muted)" }}>{s.action}</span>
+              <span
+                className="font-mono text-xs px-2 py-0.5 rounded justify-self-start"
+                style={{ background: "var(--color-surface-2)", color: "var(--color-foreground)" }}
+              >
+                {s.keys}
+              </span>
+            </div>
+          ))}
+          <div
+            className="px-5 py-2.5 text-xs"
+            style={{ background: "var(--color-surface-2)", color: "var(--color-muted)" }}
+          >
+            All rebindable in Settings → Keyboard Shortcuts or{" "}
+            <code
+              className="font-mono px-1 rounded text-[11px]"
+              style={{ background: "var(--color-border)", color: "var(--color-foreground)" }}
+            >
+              shortcuts.json
+            </code>
+          </div>
+        </div>
+        </details>
       </div>
     </section>
   );
