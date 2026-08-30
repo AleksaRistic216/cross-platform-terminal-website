@@ -5,18 +5,39 @@
  * this file may be imported from a client component.
  */
 
-const BASE_URL = process.env.CLIENT_API_BASE_URL ?? "https://api-client.limitlesssoft.com";
-const API_KEY = process.env.INTER_APP_API_KEY;
+const baseUrl = () =>
+  process.env.CLIENT_API_BASE_URL ?? "https://api-client.limitlesssoft.com";
 
 /** Cross Platform Terminal in the Client app's Applications table. */
-const APPLICATION_ID = Number(process.env.CPT_APPLICATION_ID ?? 2);
+const applicationId = () => Number(process.env.CPT_APPLICATION_ID ?? 2);
 
-/** The single "pay once, own it" licence tier. */
-const LICENCE_ID = Number(process.env.CPT_LICENCE_ID);
+/**
+ * The single "pay once, own it" licence tier.
+ *
+ * Read lazily rather than at module load: Next inlines statically-resolvable process.env reads at
+ * build time, so a value added after the last build would otherwise stay undefined until a rebuild.
+ */
+function licenceId(): number {
+  const raw = process.env.CPT_LICENCE_ID;
+
+  if (raw === undefined || raw.trim() === "") {
+    throw new Error("CPT_LICENCE_ID is not set");
+  }
+
+  const parsed = Number(raw.trim());
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    throw new Error(
+      `CPT_LICENCE_ID must be a positive integer, got ${JSON.stringify(raw)}`
+    );
+  }
+
+  return parsed;
+}
 
 function headers() {
-  if (!API_KEY) throw new Error("INTER_APP_API_KEY is not configured");
-  return { "Content-Type": "application/json", "X-Api-Key": API_KEY };
+  const apiKey = process.env.INTER_APP_API_KEY;
+  if (!apiKey) throw new Error("INTER_APP_API_KEY is not set");
+  return { "Content-Type": "application/json", "X-Api-Key": apiKey };
 }
 
 /**
@@ -27,7 +48,7 @@ function headers() {
  * retry, which matters because payment webhooks redeliver.
  */
 export async function createAccount(username: string, password: string): Promise<boolean> {
-  const res = await fetch(`${BASE_URL}/accounts`, {
+  const res = await fetch(`${baseUrl()}/accounts`, {
     method: "POST",
     headers: headers(),
     body: JSON.stringify({ username, password, nickname: username }),
@@ -43,18 +64,16 @@ export async function createAccount(username: string, password: string): Promise
 
 /** Idempotent on the API side: granting twice extends the existing row. */
 export async function grantLicence(username: string): Promise<void> {
-  if (!Number.isFinite(LICENCE_ID) || LICENCE_ID <= 0) {
-    throw new Error("CPT_LICENCE_ID is not configured");
-  }
+  const id = licenceId();
 
   const res = await fetch(
-    `${BASE_URL}/accounts/${encodeURIComponent(username)}/licences`,
+    `${baseUrl()}/accounts/${encodeURIComponent(username)}/licences`,
     {
       method: "POST",
       headers: headers(),
       body: JSON.stringify({
-        applicationId: APPLICATION_ID,
-        licenceId: LICENCE_ID,
+        applicationId: applicationId(),
+        licenceId: id,
         expiresAt: null, // pay once, own it
       }),
     }
@@ -67,7 +86,7 @@ export async function grantLicence(username: string): Promise<void> {
 
 export async function hasLicence(username: string): Promise<boolean> {
   const res = await fetch(
-    `${BASE_URL}/accounts/${encodeURIComponent(username)}/licences?applicationId=${APPLICATION_ID}`,
+    `${baseUrl()}/accounts/${encodeURIComponent(username)}/licences?applicationId=${applicationId()}`,
     { headers: headers(), cache: "no-store" }
   );
 
