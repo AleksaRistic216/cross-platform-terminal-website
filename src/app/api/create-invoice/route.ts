@@ -1,4 +1,5 @@
 import { NowPaymentsSDK } from "@nowpaymentsio/nowpayments-sdk-nodejs";
+import { hasLicence } from "@/lib/client-api";
 import { provisionPurchase } from "@/lib/provision";
 
 const sdk = new NowPaymentsSDK({
@@ -8,6 +9,8 @@ const sdk = new NowPaymentsSDK({
 });
 
 const BASE_PRICE = 8;
+
+const PORTAL_URL = process.env.CLIENT_PORTAL_URL ?? "https://client.limitlesssoft.com";
 
 function parseDiscountCodes(): Map<string, number> {
   const map = new Map<string, number>();
@@ -23,6 +26,18 @@ export async function POST(request: Request) {
 
   if (!email || !String(email).includes("@")) {
     return Response.json({ error: "Valid email required" }, { status: 400 });
+  }
+
+  // Before taking any money: a licence is perpetual and covers the account, so a second purchase
+  // for the same email would buy nothing. Point them at the portal instead.
+  try {
+    if (await hasLicence(String(email))) {
+      return Response.json({ alreadyOwned: true, portalUrl: PORTAL_URL });
+    }
+  } catch (e) {
+    // A lookup failure must not block a legitimate sale — worst case a repeat buyer reaches
+    // checkout, and provisionPurchase still refuses to double-provision.
+    console.error("[create-invoice] Licence lookup failed, continuing:", e);
   }
 
   let discountPercent = 0;

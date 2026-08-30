@@ -13,7 +13,7 @@ const included = [
   "All future updates included",
 ];
 
-type ModalState = "closed" | "email" | "payment" | "success";
+type ModalState = "closed" | "email" | "payment" | "success" | "alreadyOwned";
 
 export default function Pricing() {
   const [modal, setModal] = useState<ModalState>("closed");
@@ -22,6 +22,7 @@ export default function Pricing() {
   const [discountPercent, setDiscountPercent] = useState(0);
   const [finalAmount, setFinalAmount] = useState(8);
   const [embedUrl, setEmbedUrl] = useState("");
+  const [portalUrl, setPortalUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -32,6 +33,7 @@ export default function Pricing() {
     setDiscountPercent(0);
     setFinalAmount(8);
     setEmbedUrl("");
+    setPortalUrl("");
     setError("");
   }
 
@@ -50,6 +52,11 @@ export default function Pricing() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Failed to create invoice");
+      if (data.alreadyOwned) {
+        setPortalUrl(data.portalUrl);
+        setModal("alreadyOwned");
+        return;
+      }
       if (data.free) {
         setModal("success");
         return;
@@ -238,6 +245,39 @@ export default function Pricing() {
                 style={{ background: "var(--color-accent)", color: "#fff", opacity: loading ? 0.6 : 1 }}
               >
                 {loading ? "Creating payment…" : "Continue to payment"}
+              </button>
+            </div>
+          )}
+
+          {/* Already owned — no second purchase, and nothing secret is shown */}
+          {modal === "alreadyOwned" && (
+            <div
+              className="relative rounded-2xl p-8 w-full max-w-sm text-center"
+              style={{ background: "var(--color-surface)" }}
+            >
+              <h3 className="text-lg font-semibold mb-2" style={{ color: "var(--color-foreground)" }}>
+                You already have a licence
+              </h3>
+              <p className="text-sm mb-6" style={{ color: "var(--color-muted)" }}>
+                <strong style={{ color: "var(--color-foreground)" }}>{email}</strong> already holds a
+                Cross Platform Terminal licence, so there is nothing more to buy. Sign in from the
+                app with the password from your original email, or manage your account in the portal.
+              </p>
+              <a
+                href={portalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full py-2.5 rounded-lg font-semibold text-sm mb-2"
+                style={{ background: "var(--color-accent)", color: "#fff" }}
+              >
+                Open account portal
+              </a>
+              <button
+                onClick={closeModal}
+                className="w-full py-2 rounded-lg text-sm"
+                style={{ color: "var(--color-muted)" }}
+              >
+                Close
               </button>
             </div>
           )}
