@@ -20,15 +20,13 @@ function headers() {
 }
 
 /**
- * Creates the buyer's account.
+ * Creates the buyer's account if the username is free.
  *
- * POST /accounts always inserts — it sends no Id, so it never takes the update branch — and the
- * Users table carries no unique index on Username. Calling this twice for the same email therefore
- * produces two rows with the same username, after which login resolves to one of them and any
- * licence attached to the other is invisible. Callers MUST check hasLicence() first and skip
- * provisioning when it returns true; payment webhooks retry.
+ * Returns true when it created one, false when the account already existed. The Client API makes
+ * this decision — it will not touch an existing account, password included — so this is safe to
+ * retry, which matters because payment webhooks redeliver.
  */
-export async function createAccount(username: string, password: string): Promise<void> {
+export async function createAccount(username: string, password: string): Promise<boolean> {
   const res = await fetch(`${BASE_URL}/accounts`, {
     method: "POST",
     headers: headers(),
@@ -38,6 +36,9 @@ export async function createAccount(username: string, password: string): Promise
   if (!res.ok) {
     throw new Error(`Client API account creation failed (${res.status})`);
   }
+
+  const body = await res.json().catch(() => ({}));
+  return body?.created === true;
 }
 
 /** Idempotent on the API side: granting twice extends the existing row. */
