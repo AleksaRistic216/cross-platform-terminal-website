@@ -34,11 +34,11 @@ export async function POST(request: Request) {
         : `[webhook] Provisioned ${email} (payment ${event.payment.payment_id})`
     );
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error("[webhook] Provisioning failed:", msg);
+    console.error("[webhook] Provisioning failed:", e);
     // A non-2xx makes NOWPayments retry, which is what we want here: provisioning is idempotent,
-    // and a paid customer with no account is worse than a repeated delivery attempt.
-    return Response.json({ error: msg }, { status: 500 });
+    // and a paid customer with no account is worse than a repeated delivery attempt. The body goes
+    // to NOWPayments rather than a person, so it stays deliberately vague either way.
+    return Response.json({ error: "Provisioning failed" }, { status: 500 });
   }
 
   return Response.json({ ok: true });

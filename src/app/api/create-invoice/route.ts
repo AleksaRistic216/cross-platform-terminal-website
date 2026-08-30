@@ -41,9 +41,12 @@ export async function POST(request: Request) {
       await provisionPurchase(String(email));
       return Response.json({ free: true, emailed: true });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      console.error("[create-invoice] Free provisioning failed:", msg);
-      return Response.json({ error: msg }, { status: 500 });
+      // Log the real cause; show the buyer something that isn't our configuration.
+      console.error("[create-invoice] Free provisioning failed:", e);
+      return Response.json(
+        { error: "We couldn't set up your licence. Please contact support." },
+        { status: 500 }
+      );
     }
   }
 
