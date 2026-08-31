@@ -184,7 +184,7 @@ export default function Pricing() {
             Pricing
           </p>
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ color: "var(--color-foreground)" }}>
-            Eight euros. Once.
+            Twenty-four euros. Once.
           </h2>
           <p className="mt-4 text-base" style={{ color: "var(--color-muted)" }}>
             No subscription, no renewal, no upsell. Buy the licence and it is yours.
