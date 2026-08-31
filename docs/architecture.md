@@ -84,7 +84,7 @@ the purchase failed, because a slow crypto confirmation is not a failure.
 
 ## Pricing, and what it actually is
 
-**€8, once, perpetual.** `grantLicence` passes `expiresAt: null`, `create-invoice` creates a single
+**€24, once, perpetual.** `grantLicence` passes `expiresAt: null`, `create-invoice` creates a single
 checkout, and nothing in the codebase creates a recurring charge. The site previously showed
 "€8 / month", a "Subscription" badge, and a `UnitPriceSpecification` with `unitText: "MONTH"` in its
 JSON-LD, all while selling a lifetime licence. If a change reintroduces subscription language,

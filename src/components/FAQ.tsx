@@ -7,11 +7,11 @@
 const faqs = [
   {
     q: "Is this a subscription?",
-    a: "No. You pay €8 once. The licence is perpetual — it never expires, there is nothing to renew, and every future update is included.",
+    a: "No. You pay €24 once. The licence is perpetual — it never expires, there is nothing to renew, and every future update is included.",
   },
   {
     q: "Can I try it before buying?",
-    a: "No. There is no trial and no free tier — CPT needs a licence from the first launch. What that buys is a single €8 payment rather than an ongoing commitment: the licence is perpetual, so there is no renewal to forget about and nothing to cancel.",
+    a: "No. There is no trial and no free tier — CPT needs a licence from the first launch. What that buys is a single €24 payment rather than an ongoing commitment: the licence is perpetual, so there is no renewal to forget about and nothing to cancel.",
   },
   {
     q: "What happens after I pay?",

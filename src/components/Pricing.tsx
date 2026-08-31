@@ -42,7 +42,7 @@ export default function Pricing() {
     setEmail("");
     setDiscountCode("");
     setDiscountPercent(0);
-    setFinalAmount(8);
+    setFinalAmount(24);
     setEmbedUrl("");
     setPortalUrl("");
     setError("");
@@ -224,7 +224,7 @@ export default function Pricing() {
 
               <div className="mt-6 flex items-end gap-2">
                 <span className="text-5xl font-bold tracking-tight" style={{ color: "var(--color-foreground)" }}>
-                  €8
+                  €24
                 </span>
                 <span className="text-base mb-1.5" style={{ color: "var(--color-muted)" }}>
                   one-time

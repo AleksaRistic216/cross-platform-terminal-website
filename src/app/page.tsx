@@ -20,7 +20,7 @@ const jsonLd = {
   // subscription that does not exist.
   offers: {
     "@type": "Offer",
-    price: "8",
+    price: "24",
     priceCurrency: "EUR",
     availability: "https://schema.org/InStock",
   },

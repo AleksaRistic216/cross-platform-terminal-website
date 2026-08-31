@@ -8,7 +8,7 @@ const sdk = new NowPaymentsSDK({
   ipnCallbackUrl: "https://crossplatformterminal.com/api/payment-webhook",
 });
 
-const BASE_PRICE = 8;
+const BASE_PRICE = 24;
 
 const PORTAL_URL = process.env.CLIENT_PORTAL_URL ?? "https://client.limitlesssoft.com";
 

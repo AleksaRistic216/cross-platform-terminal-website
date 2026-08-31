@@ -59,7 +59,7 @@ export default function Hero() {
         {/* CTA */}
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           <HashLink href="/#pricing" className="px-6 py-3 rounded-lg font-semibold text-sm cpt-accent-btn">
-            Get a licence — €8
+            Get a licence — €24
           </HashLink>
           <Link
             href="/download"

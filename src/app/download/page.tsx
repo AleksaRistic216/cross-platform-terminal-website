@@ -176,7 +176,7 @@ export default async function DownloadPage() {
             the build for your platform below — there is no installer, just extract and run — then sign
             in when the app asks.{" "}
             <HashLink href="/#pricing" className="font-medium" style={{ color: "var(--color-accent)" }}>
-              Don&apos;t have a licence? €8, once.
+              Don&apos;t have a licence? €24, once.
             </HashLink>
           </div>
 
