@@ -3,6 +3,7 @@ import Link from "next/link";
 import HashLink from "@/components/HashLink";
 
 import TerminalDemo from "@/components/TerminalDemo";
+import UpdateFootnote from "@/components/UpdateFootnote";
 
 const pills = [
   "No installation — extract and run",
@@ -73,6 +74,7 @@ export default function Hero() {
         <p className="mt-4 text-center text-xs" style={{ color: "var(--color-muted)" }}>
           CPT needs a licence to run. One payment — it never expires, and every future update is
           included.
+          <UpdateFootnote />
         </p>
 
         {/* Trust pills */}

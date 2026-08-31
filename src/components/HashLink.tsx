@@ -20,12 +20,14 @@ type Props = {
   href: string;
   className?: string;
   style?: CSSProperties;
+  /** Accessible name, for a link whose text carries none of its own — an asterisk footnote, say. */
+  label?: string;
   /** Runs on activation regardless of destination — closing the mobile menu, say. */
   onNavigate?: () => void;
   children: ReactNode;
 };
 
-export default function HashLink({ href, className, style, onNavigate, children }: Props) {
+export default function HashLink({ href, className, style, label, onNavigate, children }: Props) {
   const pathname = usePathname();
 
   const hashIndex = href.indexOf("#");
@@ -45,6 +47,11 @@ export default function HashLink({ href, className, style, onNavigate, children 
     if (!el) return;
 
     e.preventDefault();
+    // A collapsed <details> — an FAQ answer — is the whole point of the link, so open it before
+    // scrolling, or the click lands on a summary with the answer still hidden.
+    const details = el.closest("details");
+    if (details) details.open = true;
+
     // Deferred a frame so anything this click closes (the mobile menu) has re-laid out first,
     // otherwise we scroll to where the target used to be.
     requestAnimationFrame(() => {
@@ -56,7 +63,7 @@ export default function HashLink({ href, className, style, onNavigate, children 
   }
 
   return (
-    <a href={href} className={className} style={style} onClick={handleClick}>
+    <a href={href} className={className} style={style} aria-label={label} title={label} onClick={handleClick}>
       {children}
     </a>
   );

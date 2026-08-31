@@ -3,15 +3,18 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const included = [
-  "Full terminal emulator (PTY-backed, all platforms)",
-  "Unlimited views & dockable widgets",
-  "AI Workflow Pipeline (Claude Code & Copilot)",
-  "Automatic AI tool detection & status badge",
-  "File browser widget",
-  "In-app auto-update",
-  "Linux (AppImage + tar.gz) and Windows builds",
-  "Every future update, at no extra cost",
+import UpdateFootnote from "@/components/UpdateFootnote";
+
+/** `footnote` hangs the update-scope asterisk off a bullet — see `UpdateFootnote`. */
+const included: { label: string; footnote?: boolean }[] = [
+  { label: "Full terminal emulator (PTY-backed, all platforms)" },
+  { label: "Unlimited views & dockable widgets" },
+  { label: "AI Workflow Pipeline (Claude Code & Copilot)" },
+  { label: "Automatic AI tool detection & status badge" },
+  { label: "File browser widget" },
+  { label: "In-app auto-update" },
+  { label: "Linux (AppImage + tar.gz) and Windows builds" },
+  { label: "Every future update, at no extra cost", footnote: true },
 ];
 
 type ModalState = "closed" | "email" | "payment" | "success" | "alreadyOwned";
@@ -237,8 +240,8 @@ export default function Pricing() {
 
             <div className="px-8 py-6">
               <ul className="space-y-3">
-                {included.map((item) => (
-                  <li key={item} className="flex items-start gap-3 text-sm">
+                {included.map(({ label, footnote }) => (
+                  <li key={label} className="flex items-start gap-3 text-sm">
                     <svg
                       className="w-4 h-4 mt-0.5 shrink-0"
                       fill="none"
@@ -249,7 +252,10 @@ export default function Pricing() {
                     >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                     </svg>
-                    <span style={{ color: "var(--color-foreground)" }}>{item}</span>
+                    <span style={{ color: "var(--color-foreground)" }}>
+                      {label}
+                      {footnote && <UpdateFootnote />}
+                    </span>
                   </li>
                 ))}
               </ul>
