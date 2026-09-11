@@ -45,7 +45,7 @@ const faqs = [
   {
     id: "after-payment",
     q: "What happens after I pay?",
-    a: "We create your account and email your sign-in details to the address you paid with, along with the date your subscription runs to. Open the app and sign in when it asks. If you already have a Limitless Soft account, the subscription is added to it and you keep the password you already use.",
+    a: "We create your account and email a link to the address you paid with, along with the date your subscription runs to. Open the link, choose your password, then open the app and sign in when it asks. The link works once, for 30 minutes — if it runs out, get a new one at crossplatformterminal.com/set-password. If you already have a Limitless Soft account, the subscription is added to it and you keep the password you already use.",
   },
   {
     id: "machines",
@@ -75,7 +75,7 @@ const faqs = [
   {
     id: "password",
     q: "I lost my password.",
-    a: "Reply to the email your sign-in details came in and we will sort it out. You can also manage the account from the customer portal.",
+    a: "Set a new one at crossplatformterminal.com/set-password. Enter the email your subscription is on and we will send a link for choosing a new password. The link works once, for 30 minutes, and your old password keeps working until you use it.",
   },
   {
     id: "bug",

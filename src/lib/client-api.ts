@@ -170,7 +170,90 @@ export async function getExpiringLicences(withinDays: number): Promise<ExpiringL
     .map((row) => ({ username: row.username, expiresAt: new Date(row.expiresAt) }));
 }
 
-/** URL-safe, ~128 bits. Shown to the buyer once, in the email, and never stored here. */
+/** A single-use link that lets the account holder choose their own password. */
+export interface PasswordLink {
+  token: string;
+  expiresAt: Date;
+}
+
+export type PasswordLinkResult =
+  | ({ status: "issued" } & PasswordLink)
+  /** No account under that username. */
+  | { status: "noAccount" }
+  /** A link went out less than `cooldownSeconds` ago, so no new one was made. */
+  | { status: "tooSoon" };
+
+/**
+ * Asks the Client API for a set-password link for this account.
+ *
+ * The Client API owns the token: it keeps only a hash of it, lets it run out after 30 minutes and
+ * forgets it once used, so this side needs no database and never sees a password. Issuing replaces
+ * any link the account already had.
+ *
+ * `cooldownSeconds` is for the public "email me a new link" form, where it stops the form being
+ * used to flood somebody's inbox. Provisioning passes none: a paying buyer always gets a link,
+ * retries included.
+ */
+export async function issuePasswordLink(
+  username: string,
+  cooldownSeconds = 0
+): Promise<PasswordLinkResult> {
+  const res = await fetch(
+    `${baseUrl()}/accounts/${encodeURIComponent(username)}/password-links`,
+    {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ cooldownSeconds }),
+    }
+  );
+
+  if (res.status === 404) return { status: "noAccount" };
+  if (res.status === 429) return { status: "tooSoon" };
+  if (!res.ok) throw new Error(`Client API password link failed (${res.status})`);
+
+  const body = await res.json().catch(() => ({}));
+  const expiresAt = new Date(body?.expiresAt);
+
+  if (typeof body?.token !== "string" || body.token === "" || Number.isNaN(expiresAt.getTime())) {
+    throw new Error("Client API returned a malformed password link");
+  }
+
+  return { status: "issued", token: body.token, expiresAt };
+}
+
+/**
+ * `invalidLink` covers every way a link can be dead — expired, already used, replaced by a newer
+ * one, or for an account that does not exist. The Client API answers all of them the same, so the
+ * page cannot be used to learn which.
+ */
+export type SetPasswordResult = "set" | "invalidLink" | "rejected";
+
+/** Sets the account's password, spending the link. */
+export async function setPasswordWithLink(
+  username: string,
+  token: string,
+  password: string
+): Promise<SetPasswordResult> {
+  const res = await fetch(
+    `${baseUrl()}/accounts/${encodeURIComponent(username)}/password`,
+    {
+      method: "POST",
+      headers: headers(),
+      body: JSON.stringify({ token, password }),
+    }
+  );
+
+  if (res.ok) return "set";
+  if (res.status === 403) return "invalidLink";
+  if (res.status === 400) return "rejected";
+  throw new Error(`Client API password change failed (${res.status})`);
+}
+
+/**
+ * URL-safe, ~128 bits, and never shown to anybody. The Client API will not open an account without
+ * a password, so a new account gets this one; the buyer then chooses their own through a
+ * set-password link, which replaces it.
+ */
 export function generatePassword(): string {
   return Buffer.from(crypto.getRandomValues(new Uint8Array(16))).toString("base64url");
 }

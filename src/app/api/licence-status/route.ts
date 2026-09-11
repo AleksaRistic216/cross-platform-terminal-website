@@ -1,5 +1,6 @@
 import { getLicence } from "@/lib/client-api";
 import { paidThroughOf } from "@/lib/plans";
+import { clientIp, createThrottle } from "@/lib/throttle";
 
 /**
  * Tells the checkout whether a payment has finished landing.
@@ -22,33 +23,13 @@ import { paidThroughOf } from "@/lib/plans";
 const TOLERANCE_MS = 60_000;
 
 /**
- * Best-effort throttle. This reveals whether an address owns a licence, so it should not be a free
- * enumeration oracle — though it exposes nothing `/api/create-invoice` does not already. Memory is
- * per serverless instance, so treat this as friction against a naive loop, not a real rate limiter.
+ * This reveals whether an address owns a licence, so it should not be a free enumeration oracle —
+ * though it exposes nothing `/api/create-invoice` does not already.
  */
-const hits = new Map<string, { n: number; resetAt: number }>();
-const WINDOW_MS = 60_000;
-const MAX_PER_WINDOW = 40;
-
-function throttled(ip: string): boolean {
-  const now = Date.now();
-  const entry = hits.get(ip);
-
-  if (!entry || now > entry.resetAt) {
-    hits.set(ip, { n: 1, resetAt: now + WINDOW_MS });
-    if (hits.size > 5000) {
-      for (const [key, value] of hits) if (now > value.resetAt) hits.delete(key);
-    }
-    return false;
-  }
-
-  entry.n += 1;
-  return entry.n > MAX_PER_WINDOW;
-}
+const throttled = createThrottle(40);
 
 export async function POST(request: Request) {
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
-  if (throttled(ip)) {
+  if (throttled(clientIp(request))) {
     return Response.json({ error: "Too many requests" }, { status: 429 });
   }
 

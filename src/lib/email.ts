@@ -1,11 +1,14 @@
 import { Resend } from "resend";
 
+import type { PasswordLink } from "@/lib/client-api";
+import { linkLifetime, passwordLinkUrl, SET_PASSWORD_PATH } from "@/lib/password-link";
 import { formatDate, GRACE_DAYS, paidThroughOf } from "@/lib/plans";
 
 const FROM = process.env.RESEND_FROM ?? "Cross Platform Terminal <noreply@crossplatformterminal.com>";
 
 const PORTAL_URL = process.env.CLIENT_PORTAL_URL ?? "https://client.limitlesssoft.com";
 const RENEW_URL = "https://crossplatformterminal.com/#pricing";
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "https://www.crossplatformterminal.com";
 
 async function send(to: string, subject: string, lines: string[]): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
@@ -46,47 +49,81 @@ function periodLines(expiresAt: Date | null): string[] {
 }
 
 /**
- * Sends a new subscriber their sign-in details. The password is generated per purchase and is not
- * stored anywhere on this side, so this email is the only copy — a send failure has to fail the
- * caller loudly rather than be swallowed.
+ * A set-password link, and what to do when it has run out. The lifetime is stated from the expiry
+ * the Client API returned, so the email cannot promise longer than the link actually lasts.
  */
-export async function sendCredentials(
+function passwordLinkLines(email: string, link: PasswordLink): string[] {
+  return [
+    `  ${passwordLinkUrl(SITE_URL, email, link.token)}`,
+    "",
+    `The link works once, and runs out in ${linkLifetime(link.expiresAt)}. If it has run out, get a`,
+    `new one at ${SITE_URL}${SET_PASSWORD_PATH}`,
+  ];
+}
+
+/**
+ * Welcomes a new subscriber. Nobody is ever sent a password: the account was opened with a random
+ * one nobody knows, and this link is how the buyer chooses their own. A send failure has to fail
+ * the caller loudly rather than be swallowed — without this email there is no way in.
+ */
+export async function sendWelcome(
   email: string,
-  password: string,
+  link: PasswordLink,
   expiresAt: Date | null
 ): Promise<void> {
   await send(email, "Your Cross Platform Terminal subscription", [
     "Thanks for subscribing to Cross Platform Terminal.",
     "",
-    "Sign in from the app with:",
+    "Your account is ready. Choose your password here:",
     "",
-    `  Username: ${email}`,
-    `  Password: ${password}`,
+    ...passwordLinkLines(email, link),
     "",
-    "Open the app and sign in when prompted. Your subscription covers this account,",
-    "and you can release a device from the licence dialog to move to another machine.",
+    "Then open the app and sign in when prompted, with this email address as the username",
+    `(${email}) and the password you chose. Your subscription covers this account, and you can`,
+    "release a device from the licence dialog to move to another machine.",
     "",
     ...periodLines(expiresAt),
-    "",
-    "Keep this email — the password is not stored anywhere and cannot be shown again.",
   ]);
 }
 
 /**
  * For a payment on an account that already existed — a lapsed subscriber coming back, or someone
- * who already uses another Limitless Soft product. We never learn their password, so there is
- * nothing to send them but the news that the subscription is on it.
+ * who already uses another Limitless Soft product. Their password stays as it is.
+ *
+ * It still carries a set-password link, because this is also where a webhook retry lands after the
+ * welcome email failed: by then the account exists, so the buyer arrives here holding an account
+ * whose password nobody ever told them. Without the link they were told to "use the password you
+ * already have" and had no way in.
  */
-export async function sendLicenceAdded(email: string, expiresAt: Date | null): Promise<void> {
+export async function sendLicenceAdded(
+  email: string,
+  link: PasswordLink,
+  expiresAt: Date | null
+): Promise<void> {
   await send(email, "Your Cross Platform Terminal subscription", [
     "Thanks for subscribing to Cross Platform Terminal.",
     "",
     `The subscription has been added to your existing account (${email}).`,
     "Sign in from the app with the password you already use.",
     "",
-    ...periodLines(expiresAt),
+    "Don't know it, or never set one? Choose a new password here:",
     "",
-    "If you have forgotten your password, reply to this email and we will sort it out.",
+    ...passwordLinkLines(email, link),
+    "",
+    ...periodLines(expiresAt),
+  ]);
+}
+
+/** Answers the "email me a link" form on the set-password page. */
+export async function sendPasswordLink(email: string, link: PasswordLink): Promise<void> {
+  await send(email, "Set your Cross Platform Terminal password", [
+    `Somebody — hopefully you — asked to set a new password for your Cross Platform Terminal`,
+    `account (${email}). Choose one here:`,
+    "",
+    ...passwordLinkLines(email, link),
+    "",
+    "If you did not ask for this, ignore this email. Your current password keeps working, and",
+    "only this inbox has the link.",
   ]);
 }
 

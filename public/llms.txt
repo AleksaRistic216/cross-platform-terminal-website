@@ -83,7 +83,7 @@ subscription on that account to go further. There is no trial and no free tier.
 - Access continues for 3 days past the end of a paid period, so a renewal still confirming on-chain cannot lock anyone out.
 - Every update is included while subscribed — patches, features and future major versions alike.
 - The subscription covers one account. Devices can be released and moved from the licence dialog in the app.
-- Payment is by crypto, through NOWPayments. Sign-in details are emailed after the payment confirms.
+- Payment is by crypto, through NOWPayments. After the payment confirms, a link for choosing the account password is emailed; it works once, for 30 minutes, and a new one can be requested at [/set-password](/set-password), which is also the lost-password page.
 - All sales are final, part-used periods included. Crypto payments cannot be reversed, so there are no refunds.
 - Perpetual €24 licences sold before the switch to a subscription are grandfathered: they never expire and are not converted.
 

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import UpdateFootnote from "@/components/UpdateFootnote";
+import { LINK_LIFETIME_MINUTES, SET_PASSWORD_PATH } from "@/lib/password-link";
 import { DEFAULT_PLAN, formatDate, PLANS, type PlanId } from "@/lib/plans";
 
 /** `footnote` hangs the update-scope asterisk off a bullet — see `UpdateFootnote`. */
@@ -346,7 +347,7 @@ export default function Pricing() {
                 Subscribe — {euro(selected.amount)}
               </button>
               <p className="mt-3 text-center text-xs" style={{ color: "var(--color-muted)" }}>
-                Crypto payment via NOWPayments · sign-in details emailed to you
+                Crypto payment via NOWPayments · we email you a link to set your password
               </p>
               <p className="mt-1.5 text-center text-xs" style={{ color: "var(--color-muted)", opacity: 0.8 }}>
                 Already subscribed? Paying again extends your current period.
@@ -383,7 +384,7 @@ export default function Pricing() {
                   <CloseButton onClick={closeModal} />
 
                   <h3 className="text-lg font-semibold mb-1" style={{ color: "var(--color-foreground)" }}>
-                    Where should we send your sign-in?
+                    Where should we send your sign-in link?
                   </h3>
                   <p className="text-sm mb-5" style={{ color: "var(--color-muted)" }}>
                     {euro(selected.amount)} for {plan === "yearly" ? "a year" : "a month"}. If this
@@ -510,9 +511,14 @@ export default function Pricing() {
                       </>
                     ) : (
                       <>
-                        We&apos;ve sent your sign-in details to{" "}
-                        <strong style={{ color: "var(--color-foreground)" }}>{email}</strong>. Download the
-                        app, open it, and sign in when prompted.
+                        We&apos;ve emailed a link to{" "}
+                        <strong style={{ color: "var(--color-foreground)" }}>{email}</strong>. Open it to
+                        choose your password, then download the app and sign in. The link works for{" "}
+                        {LINK_LIFETIME_MINUTES} minutes — if it runs out,{" "}
+                        <Link href={SET_PASSWORD_PATH} className="underline" style={{ color: "var(--color-accent)" }}>
+                          get a new one
+                        </Link>
+                        .
                       </>
                     )}
                   </p>

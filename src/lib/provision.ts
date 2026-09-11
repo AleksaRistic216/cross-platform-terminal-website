@@ -1,5 +1,11 @@
-import { createAccount, generatePassword, getLicence, grantLicence } from "@/lib/client-api";
-import { sendCredentials, sendLicenceAdded, sendRenewed } from "@/lib/email";
+import {
+  createAccount,
+  generatePassword,
+  getLicence,
+  grantLicence,
+  issuePasswordLink,
+} from "@/lib/client-api";
+import { sendLicenceAdded, sendRenewed, sendWelcome } from "@/lib/email";
 
 /**
  * How far short of the target expiry still counts as "this payment is already provisioned".
@@ -70,21 +76,27 @@ export async function provisionPurchase(
     return { outcome: "renewed" };
   }
 
-  const password = generatePassword();
+  // The Client API will not open an account without a password, so a new one gets a random password
+  // nobody is ever told; the buyer chooses their own through the link below. Safe to repeat: the
+  // Client API creates only when the username is free, and never resets an existing password.
+  const created = await createAccount(email, generatePassword());
 
-  // Safe to repeat: the Client API creates only when the username is free, and tells us which
-  // happened. It never resets an existing account's password.
-  const created = await createAccount(email, password);
+  // No cooldown: a paying buyer always gets a fresh link, including on a webhook retry, where the
+  // link from the failed attempt may never have reached them.
+  const link = await issuePasswordLink(email);
+  if (link.status !== "issued") {
+    throw new Error(`Could not issue a password link for ${email} (${link.status})`);
+  }
 
-  // Allowed to throw. The generated password is stored nowhere, so if this email does not go out
-  // the buyer has no way in — better to fail the webhook and be retried than to grant the licence
-  // and call it done.
+  // Allowed to throw. Without this email the buyer has no way in — better to fail the webhook and
+  // be retried than to grant the licence and call it done. The retry takes the `else` branch,
+  // since the account exists by then, which is why that email carries a link as well.
   if (created) {
-    await sendCredentials(email, password, expiresAt);
+    await sendWelcome(email, link, expiresAt);
   } else {
-    // The account predates this payment — a lapsed subscriber coming back, or someone who already
-    // uses another Limitless Soft product. We do not know their password and must not reset it.
-    await sendLicenceAdded(email, expiresAt);
+    // The account predates this payment — a lapsed subscriber coming back, someone who already
+    // uses another Limitless Soft product, or the retry above. Their password is left alone.
+    await sendLicenceAdded(email, link, expiresAt);
   }
 
   await grantLicence(email, expiresAt);
