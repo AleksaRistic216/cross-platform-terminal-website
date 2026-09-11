@@ -29,7 +29,7 @@ Checkout and provisioning need these set (see `.env`):
 | `DISCOUNT_CODES` | `CODE:PERCENT,CODE:PERCENT`; 100% provisions without payment |
 | `CRON_SECRET` | Bearer token for `/api/renewal-reminders`. Unset ⇒ the route refuses to run |
 | `GITHUB_TOKEN` | Optional. Lifts the rate limit on the release lookup |
-| `NEXT_PUBLIC_SITE_URL` | Canonical origin for metadata, sitemap and robots |
+| `NEXT_PUBLIC_SITE_URL` | Canonical origin for metadata, sitemap, robots and the set-password links in emails |
 
 ## What the product costs
 

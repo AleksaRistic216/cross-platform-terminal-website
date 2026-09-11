@@ -137,8 +137,11 @@ half of the site drifts on its own.
 | `/pricing` | `src/app/pricing/page.tsx` | Plans and checkout |
 | `/faq` | `src/app/faq/page.tsx` | FAQ accordion, `FAQPage` JSON-LD |
 | `/download` | `src/app/download/page.tsx` | Per-platform downloads (server component, ISR) |
+| `/set-password` | `src/app/set-password/page.tsx` | Choose a password from an emailed link, or ask for a new link. `noindex` |
 | `/api/create-invoice` | `src/app/api/create-invoice/route.ts` | Starts a purchase |
 | `/api/licence-status` | `src/app/api/licence-status/route.ts` | Has the purchase finished provisioning? |
+| `/api/password-link` | `src/app/api/password-link/route.ts` | Emails a set-password link; same answer for unknown addresses |
+| `/api/set-password` | `src/app/api/set-password/route.ts` | Sets the password with a link's token |
 | `/api/payment-webhook` | `src/app/api/payment-webhook/route.ts` | NOWPayments IPN → provisioning |
 | `/api/renewal-reminders` | `src/app/api/renewal-reminders/route.ts` | Daily cron; emails subscriptions about to lapse |
 
@@ -319,6 +322,44 @@ expiry the invoice was created for, and the answer is yes only once the licence 
 
 Polling stops after 20 minutes and tells the buyer their email will still arrive; it does not claim
 the purchase failed, because a slow crypto confirmation is not a failure.
+
+## Passwords
+
+Nobody is ever sent a password. A new account is opened with a random one that nobody is told, and
+the buyer chooses their own through a set-password link:
+
+```
+provisionPurchase (new subscriber)
+  ├─ createAccount(email, <random, never shown>)
+  ├─ issuePasswordLink(email)       → Client API stores sha256(token) + issued-at
+  ├─ email: welcome (account created) | licence added (account existed) — both carry the link
+  └─ grantLicence                   ← still last
+
+/set-password?email=…&token=…
+  └─ POST /api/set-password → Client API: hash matches, under 30 min, unused
+                              → sets the password and spends the link
+
+/set-password (no token) — the lost-password page
+  └─ POST /api/password-link {email} → same answer whether or not the account exists
+```
+
+- **The link lives in the Client API**, because that is the side with a database. It keeps only a
+  hash of the token, owns the 30-minute lifetime, spends a link on use, and replaces an outstanding
+  link when a new one is issued. This side stores nothing and never sees a password it did not
+  generate and throw away.
+- **The "licence added" email carries a link too.** That branch is also where a webhook retry lands
+  after the welcome email failed: the account exists by then, so the buyer holds an account whose
+  password nobody told them. Before links, that email said "use the password you already have" and
+  the buyer had no way in.
+- **The lost-password form cannot enumerate customers or flood an inbox.** It answers the same for
+  unknown addresses. `/api/password-link` throttles per IP (best effort, per instance) and asks the
+  Client API for `cooldownSeconds: 60`, which it enforces per account across instances; a request
+  inside the cooldown is answered normally and sends nothing. Provisioning passes no cooldown — a
+  paying buyer always gets a fresh link.
+- **The page hides the token.** It is `noindex`, sends no `Referer`, and replaces the address with
+  one that has no token as soon as it is in memory.
+- **Password rules** (8–64 characters) live in `src/lib/password-link.ts` and must match the Client
+  API's validator.
 
 ## Pricing, and what it actually is
 
