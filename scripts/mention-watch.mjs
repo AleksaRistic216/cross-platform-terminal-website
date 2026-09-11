@@ -89,6 +89,25 @@ const QUERIES = [
     must: [["agent"], ["terminal", "pane", "tmux", "tab"]],
     angle: "The workflow CPT is built around. Ask what they are running before pitching anything.",
   },
+  /*
+   * "How do I…" questions a guide already answers. The reply is the documented fix plus a link to
+   * the guide, which someone who does not code can post honestly: it is the docs, not a war story.
+   */
+  {
+    q: "claude code shift enter newline",
+    must: [["claude code", "claude-code"], ["shift+enter", "shift enter", "newline", "new line", "multiline", "multi-line"]],
+    angle: "Has a documented free fix. Give it and link the guide; CPT only if they are on Windows or Linux and asking about terminals.",
+  },
+  {
+    q: "claude code notification waiting input",
+    must: [["claude code", "claude-code", "codex", "aider", "gemini cli"], ["notif", "waiting for", "idle", "needs input"]],
+    angle: "The notifications guide answers this in full, free options first. Link it rather than pitching CPT.",
+  },
+  {
+    q: "windows terminal alternative linux",
+    must: [["terminal"], ["alternative", "replacement", "recommend"], ["windows"], ["linux"]],
+    angle: "The core question. WezTerm and Alacritty first — free and excellent — then CPT for one app that behaves the same on both.",
+  },
 ];
 
 /** True when the text satisfies every group in `must` — see the note on QUERIES. */
