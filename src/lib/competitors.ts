@@ -300,6 +300,44 @@ export const COMPETITORS: Competitor[] = [
     ],
     verifiedOn: "2026-09-10",
   },
+  {
+    slug: "wave",
+    name: "Wave Terminal",
+    url: "https://www.waveterm.dev",
+    what: "An open-source, AI-integrated terminal that arranges terminals, editors, file previews, web browsers and an AI assistant as blocks in one window.",
+    platforms: "macOS 11+, Windows 10 1809+ (x64), Linux on glibc 2.28+ (x64 and arm64)",
+    windows: "Native, with an installer, an MSI or a zip",
+    licence: "Apache-2.0, open source",
+    price: "Free, no account required; Wave AI is in beta with included credits, or bring your own key",
+    rendering: "Electron, with xterm.js as the terminal",
+    config: "JSON — settings.json and connections.json — plus the wsh command line",
+    persistence:
+      "Durable sessions for remote SSH connections, opt-in. Local and WSL terminals stay alive while Wave is running",
+    agents:
+      "Its own assistant, Wave AI. Claude Code tab badges for waiting and done, wired up through Claude Code hooks",
+    wins: [
+      "Free and open source, with no account required. CPT has neither a free tier nor a trial.",
+      "It runs on macOS and on arm64 today, and its Linux build asks only for glibc 2.28. CPT has no macOS or ARM build, and its Linux download needs glibc 2.39.",
+      "Remote work is a first-class feature: durable SSH sessions survive network drops and Wave restarts, and remote files open in a built-in editor and previewer. CPT's detachable sessions are local only.",
+      "A built-in AI assistant that reads terminal output and can edit files with your approval, using Wave's service, your own API key, or a local model. CPT has no assistant of its own.",
+    ],
+    cptWins: [
+      "Local shells that outlive the app. Wave's docs say durable sessions are for remote SSH connections only, and that local and WSL terminals remain active as long as Wave is running. CPT's opt-in daemon keeps local shells — Windows ones included — running after the app is closed.",
+      "Agent awareness without setup. Wave's documented integration is Claude Code hooks you add to your settings, which badge a tab when Claude is waiting or done. CPT detects eight agent CLIs from the process tree, even behind npx, uv, node or a virtualenv shim, and tells idle, working, waiting-for-input, finished and failed apart.",
+    ],
+    verdict:
+      "Wave is the better pick if you want a free, open-source terminal that also runs on macOS, spend your day on remote machines over SSH, or want an AI assistant built into the terminal itself. CPT is the better pick if your shells are local on Windows and Linux, and you want them to outlive the app and to show you what each agent CLI in them is doing without wiring anything up.",
+    sources: [
+      { label: "README", url: "https://github.com/wavetermdev/waveterm" },
+      { label: "LICENSE", url: "https://github.com/wavetermdev/waveterm/blob/main/LICENSE" },
+      { label: "Durable sessions", url: "https://docs.waveterm.dev/durable-sessions" },
+      { label: "Claude Code integration", url: "https://docs.waveterm.dev/claude-code" },
+      { label: "Wave AI", url: "https://docs.waveterm.dev/waveai" },
+      { label: "Configuration", url: "https://docs.waveterm.dev/config" },
+      { label: "package.json", url: "https://github.com/wavetermdev/waveterm/blob/main/package.json" },
+    ],
+    verifiedOn: "2026-09-11",
+  },
 ];
 
 export function competitorBySlug(slug: string): Competitor | undefined {

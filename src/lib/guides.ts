@@ -210,13 +210,13 @@ export const GUIDES: Guide[] = [
     title: "tmux alternatives on Windows",
     metaTitle: "tmux alternatives on Windows",
     description:
-      "tmux has no native Windows build. What works instead: WSL, MSYS2, Windows Terminal panes, Zellij, or a terminal with session persistence built in.",
+      "tmux has no native Windows build. What works instead: WSL, psmux, Zellij, Windows Terminal panes, or a terminal with persistence built in.",
     summary:
       "What actually works when you want tmux on Windows and there is no native tmux to install.",
     blocks: [
       {
         kind: "p",
-        text: "There is no native Windows build of tmux, and there is not going to be one. tmux is built on POSIX PTYs and Unix domain sockets; Windows has ConPTY, which is a different thing with different semantics. Everything below is either Linux-in-a-box or a different tool.",
+        text: "There is no native Windows build of tmux. tmux is built on POSIX PTYs and Unix domain sockets; Windows has ConPTY, which is a different thing with different semantics. Everything below is either Linux-in-a-box or a different tool.",
       },
       { kind: "h2", text: "Run it inside WSL" },
       {
@@ -241,10 +241,15 @@ export const GUIDES: Guide[] = [
         kind: "p",
         text: "What it does not have is persistence. Close the window and the shells go with it — there is no detach and reattach, which for many people is the entire reason they ran tmux.",
       },
+      { kind: "h2", text: "psmux" },
+      {
+        kind: "p",
+        text: "[psmux](https://github.com/psmux/psmux) is a multiplexer written for Windows from the ground up, in Rust, with no WSL, Cygwin or MSYS2 underneath. It runs PowerShell, cmd, Git Bash and WSL shells side by side, detaches and reattaches sessions the way tmux does, and installs with `winget install psmux` on Windows 10 or 11. Free and MIT-licensed. If you want tmux's model on native Windows shells, try this first.",
+      },
       { kind: "h2", text: "Zellij" },
       {
         kind: "p",
-        text: "[Zellij](https://zellij.dev/) is a modern multiplexer with a friendlier default UX than tmux. Same architectural problem, though: it is a Unix multiplexer, so on Windows it runs inside WSL and multiplexes what is in there.",
+        text: "[Zellij](https://zellij.dev/) is a modern multiplexer with a friendlier default UX than tmux. Since [version 0.44](https://github.com/zellij-org/zellij/releases/tag/v0.44.0) (March 2026) it runs natively on Windows — a `zellij.exe` you start from PowerShell or Windows Terminal — with the same session management it has on Linux and macOS. Free and MIT-licensed. The Windows port is recent and the releases since have been fixing it, so expect some rough edges.",
       },
       { kind: "h2", text: "A terminal with persistence built in" },
       {
@@ -254,10 +259,10 @@ export const GUIDES: Guide[] = [
       {
         kind: "list",
         items: [
-          "It is the app's own tabs and panes, so there is no prefix key and no second keybinding layer.",
-          "It persists native Windows shells, not only WSL ones.",
+          "It is the app's own tabs and panes, so there is no prefix key and no second keybinding layer. That, not persistence itself, is the difference from psmux and Zellij, which now persist native Windows shells too.",
           "The same build and the same shortcuts work on Linux, which is usually why the question came up in the first place.",
           "It is local only — for a session on a remote host, you still want tmux on that host.",
+          "It is paid, with no trial. psmux and Zellij are free.",
         ],
       },
       { kind: "h2", text: "Which to pick" },
@@ -266,7 +271,8 @@ export const GUIDES: Guide[] = [
         items: [
           "Your work is Linux, Windows is just the laptop: WSL2 plus tmux. Free, faithful, done.",
           "You only wanted splits: Windows Terminal already does that, free.",
-          "You wanted persistence for native Windows shells: no multiplexer will give you that, which is the gap CPT fills.",
+          "You wanted tmux for native Windows shells: psmux, or Zellij if you prefer its UX. Both free.",
+          "You wanted shells that survive closing the terminal, with no multiplexer to learn, and the same app on Linux: that is the gap CPT fills.",
           "You are on a remote host: tmux on the host. Nothing local applies.",
         ],
       },
@@ -337,7 +343,147 @@ export const GUIDES: Guide[] = [
         text: "Set up notification hooks in each agent CLI and give each pane a distinct title. It is not as good, it costs nothing, and it removes most of the twenty-minute stalls.",
       },
     ],
-    related: ["same-terminal-setup-on-windows-and-linux", "gpu-accelerated-terminal-explained"],
+    related: [
+      "get-notified-when-claude-code-needs-input",
+      "same-terminal-setup-on-windows-and-linux",
+      "gpu-accelerated-terminal-explained",
+    ],
+  },
+  {
+    slug: "get-notified-when-claude-code-needs-input",
+    title: "How to get notified when Claude Code is waiting for you",
+    metaTitle: "Get notified when Claude Code needs your input",
+    description:
+      "Claude Code can ring a bell, raise a desktop notification or run your own script when it is waiting on you. How to set each up, inside tmux too.",
+    summary:
+      "A bell, a desktop notification or a hook — the free ways to stop checking the pane, and where they run out.",
+    blocks: [
+      {
+        kind: "p",
+        text: "You start Claude Code on a long task, switch to something else, and come back twenty minutes later to find it stopped after thirty seconds to ask whether it may run a command. Most of the fix is already built into Claude Code and costs nothing. It is a settings change, or at most a one-line hook.",
+      },
+      { kind: "h2", text: "Start with what Claude Code already does" },
+      {
+        kind: "p",
+        text: "When Claude finishes a task or pauses for a permission prompt, and you appear to be away from the terminal, Claude Code fires a notification. By default it becomes a desktop notification only in [Ghostty](/vs/ghostty), [kitty](/vs/kitty) and iTerm2. In any other terminal, the one-line fix is to have it ring the terminal bell instead ([Claude Code's terminal docs](https://code.claude.com/docs/en/terminal-config)):",
+      },
+      {
+        kind: "code",
+        lines: [
+          "// ~/.claude/settings.json",
+          "{",
+          '  "preferredNotifChannel": "terminal_bell"',
+          "}",
+        ],
+      },
+      {
+        kind: "p",
+        text: "Most terminals can flash, bounce the taskbar or play a sound on a bell, so check your terminal's bell settings before writing anything more elaborate. The desktop notification also reaches your local machine over SSH, so a remote session can still get your attention.",
+      },
+      { kind: "h2", text: "A Notification hook, for a real desktop notification anywhere" },
+      {
+        kind: "p",
+        text: "For a proper notification in a terminal that does not get one by default, add a Notification hook. It runs a command of your choosing alongside the built-in behaviour rather than replacing it. Put it in ~/.claude/settings.json for every project, or in a project's .claude/settings.json to share it with the repository ([hooks guide](https://code.claude.com/docs/en/hooks-guide)). On Linux:",
+      },
+      {
+        kind: "code",
+        lines: [
+          "{",
+          '  "hooks": {',
+          '    "Notification": [',
+          "      {",
+          '        "matcher": "",',
+          '        "hooks": [',
+          "          {",
+          '            "type": "command",',
+          "            \"command\": \"notify-send 'Claude Code' 'Claude Code needs your attention'\"",
+          "          }",
+          "        ]",
+          "      }",
+          "    ]",
+          "  }",
+          "}",
+        ],
+      },
+      {
+        kind: "list",
+        items: [
+          "Linux: notify-send needs a notification daemon, which headless servers, SSH sessions and most containers lack. On Debian and Ubuntu it comes from the libnotify-bin package.",
+          "macOS: Anthropic's example uses osascript with “display notification”. It fails silently until Script Editor has notification permission in System Settings.",
+          "Windows: the documented PowerShell example opens a MessageBox dialog, which can land behind your terminal window. For a toast in the corner of the screen instead, use BurntToast (below).",
+        ],
+      },
+      {
+        kind: "code",
+        lines: [
+          "# Windows: a toast instead of a dialog — BurntToast, MIT, from the PowerShell Gallery",
+          "Install-Module -Name BurntToast",
+          "New-BurntToastNotification -Text 'Claude Code', 'Needs your attention'",
+          "",
+          "# macOS: terminal-notifier, MIT, from Homebrew",
+          "brew install terminal-notifier",
+          "terminal-notifier -title 'Claude Code' -message 'Needs your attention'",
+        ],
+      },
+      {
+        kind: "p",
+        text: "Run each one by hand first. Once a notification appears, make it the hook's command — on Windows, wrapped in powershell.exe -Command.",
+      },
+      { kind: "h2", text: "Only the notifications you want" },
+      {
+        kind: "p",
+        text: "An empty matcher fires on every notification type. Two are the ones that matter here: permission_prompt, when a tool call has been waiting for your approval for about six seconds, and idle_prompt, when Claude finished about sixty seconds ago and you have not typed since. Set the matcher to permission_prompt|idle_prompt and the sign-in and MCP notifications stay quiet ([hooks reference](https://code.claude.com/docs/en/hooks)).",
+      },
+      {
+        kind: "p",
+        text: "There is also a Stop hook, which fires every time Claude finishes responding. It is the right hook for running a script after each turn, and a noisy one for notifications, because it fires even while you are sitting in front of the pane.",
+      },
+      { kind: "h2", text: "Inside tmux" },
+      {
+        kind: "p",
+        text: "tmux swallows the escape sequences Claude Code uses for desktop notifications unless you let them through. Anthropic's docs give the passthrough line. tmux's own monitor-silence option is the agent-agnostic backstop: it highlights a window in the status line once it has gone quiet for the given number of seconds, which is what an agent looks like when it stops to wait.",
+      },
+      {
+        kind: "code",
+        lines: [
+          "# ~/.tmux.conf",
+          "set -g allow-passthrough on     # let notifications reach the outer terminal",
+          "setw -g monitor-silence 30      # highlight windows silent for 30 seconds",
+        ],
+      },
+      { kind: "h2", text: "Where the free setup runs out" },
+      {
+        kind: "list",
+        items: [
+          "It is per agent. Claude Code's hooks do nothing for Codex, Gemini CLI or Aider in the next pane, and each one needs its own configuration, if it has any.",
+          "It is per machine. A Linux desktop and a Windows laptop need different commands, and you maintain both.",
+          "It tells you that something needs you, not where. The hook receives the session's working directory as JSON on stdin, so a small script can put the project name in the notification. It still will not take you to the right pane.",
+        ],
+      },
+      { kind: "h2", text: "Where CPT fits" },
+      {
+        kind: "p",
+        text: "Cross Platform Terminal moves this into the terminal rather than into each agent's config. It recognises Claude Code, GitHub Copilot, Codex CLI, Gemini CLI, Aider, Cursor Agent, opencode and Amp from the process tree and argv, even behind npx, uv, node or a virtualenv shim. It gives the pane a badge naming the tool, and tells waiting-for-input apart from working, idle, finished and failed. From v0.5.7 it also notifies the desktop when an agent needs you, with no hook to write. It behaves the same on Linux and Windows. More on that in [seeing what your coding agent is doing](/guides/see-what-your-coding-agent-is-doing-in-the-terminal).",
+      },
+      {
+        kind: "note",
+        text: "CPT is a paid subscription with no free tier and no trial, and there is no macOS build yet. If you run one agent on one machine, the settings line or the hook above is all you need — set that up and stop there.",
+      },
+      { kind: "h2", text: "Which to pick" },
+      {
+        kind: "list",
+        items: [
+          "Ghostty, kitty or iTerm2: nothing to do, notifications already work.",
+          "Any other terminal, and a bell is enough: preferredNotifChannel set to terminal_bell.",
+          "You want a real desktop notification: a Notification hook matched on permission_prompt|idle_prompt.",
+          "Several agents from different vendors, or on both Linux and Windows: that is where per-pane detection in CPT starts to earn its price.",
+        ],
+      },
+    ],
+    related: [
+      "see-what-your-coding-agent-is-doing-in-the-terminal",
+      "keep-a-terminal-session-alive-after-closing-the-app",
+    ],
   },
   {
     slug: "gpu-accelerated-terminal-explained",
