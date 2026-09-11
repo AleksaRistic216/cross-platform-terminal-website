@@ -2,7 +2,7 @@
 /**
  * Keeps the comparison pages honest.
  *
- * src/lib/competitors.ts states facts about eight other projects. Those projects ship. A claim
+ * src/lib/competitors.ts states facts about nine other projects. Those projects ship. A claim
  * that was true in September is a claim that gets screenshotted in March, and the cost of being
  * wrong about someone else's product on your own domain is much higher than the page earns.
  *

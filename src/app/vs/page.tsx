@@ -8,7 +8,7 @@ import { COMPETITORS } from "@/lib/competitors";
 export const metadata: Metadata = {
   title: "CPT compared with other terminals",
   description:
-    "Cross Platform Terminal next to WezTerm, Alacritty, kitty, Ghostty, Windows Terminal, Warp, Tabby and Hyper — platforms, price, persistence and agent support, including where each one wins.",
+    "Cross Platform Terminal next to WezTerm, Alacritty, kitty, Ghostty, Windows Terminal, Warp, Tabby, Hyper and Wave — platforms, price, persistence and agent support, including where each one wins.",
   alternates: { canonical: "/vs" },
 };
 

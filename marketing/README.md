@@ -46,10 +46,10 @@ scripts/capture-clips.sh --dry-run
 
 Content lives in the site, not here:
 
-- `src/lib/competitors.ts` → `/vs` and `/vs/<slug>` — eight comparison pages. **Every claim about
+- `src/lib/competitors.ts` → `/vs` and `/vs/<slug>` — nine comparison pages. **Every claim about
   another project is checked against that project's own documentation, and cited.** Read the note
   at the top of that file before editing it.
-- `src/lib/guides.ts` → `/guides` and `/guides/<slug>` — five intent pages, each of which answers
+- `src/lib/guides.ts` → `/guides` and `/guides/<slug>` — six intent pages, each of which answers
   the question properly before it mentions CPT.
 
 `npm test` covers both: no broken internal links, no comparison without sources, no comparison that

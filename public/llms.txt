@@ -95,5 +95,5 @@ subscription on that account to go further. There is no trial and no free tier.
 - [Changelog](/changelog) — Every release with its date and notes, fetched from the release repository
 - [FAQ](/faq) — Billing, platforms, updates, refunds and support
 - [Download](/download) — Download links for all platforms
-- [Comparisons](/vs) — CPT next to WezTerm, Alacritty, kitty, Ghostty, Windows Terminal, Warp, Tabby and Hyper. Each page states where the other tool is the better choice, and cites the competitor's own documentation for every claim, with the date it was checked.
-- [Guides](/guides) — Practical answers on cross-platform terminal setups, keeping shells alive after the app closes, tmux alternatives on Windows, GPU rendering, and tracking coding agents across panes. Written to answer the question even when the answer is not CPT.
+- [Comparisons](/vs) — CPT next to WezTerm, Alacritty, kitty, Ghostty, Windows Terminal, Warp, Tabby, Hyper and Wave. Each page states where the other tool is the better choice, and cites the competitor's own documentation for every claim, with the date it was checked.
+- [Guides](/guides) — Practical answers on cross-platform terminal setups, keeping shells alive after the app closes, tmux alternatives on Windows, GPU rendering, tracking coding agents across panes, and getting notified when Claude Code needs input. Written to answer the question even when the answer is not CPT.
