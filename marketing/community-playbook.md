@@ -22,8 +22,11 @@ organic mentions and the SEO work as well.
 
 ## When you do post
 
-- **Disclose in the first line.** "I build CPT, so take this with salt —". Every time, no
-  exceptions. Required by Reddit and HN, and it reads better than being found out.
+- **Disclose in the first line.** "I'm part of the CPT team, so take this with salt —". Every
+  time, no exceptions. Required by Reddit and HN, and it reads better than being found out.
+- **Only claim experience you have.** The person posting is not a developer. Never post "what
+  works for me" about coding workflows, and skip threads that ask for it. What CPT does, what it
+  costs and what the free alternatives are — that can be said honestly.
 - **Answer the question first.** The recommendation, if any, goes at the end.
 - **One account.** Never a second one to agree with the first, never a friend asked to chime in.
   This specific move is what turns a marketing account into a domain-level ban.
