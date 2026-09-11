@@ -234,8 +234,9 @@ function render(groups, args) {
     `${total} new thread${total === 1 ? "" : "s"} from the last ${args.days} day${args.days === 1 ? "" : "s"}.`,
     "",
     "> Nothing here has been replied to. These are threads to *read*. The rules before you post:",
-    "> disclose that you build CPT in the first line, answer the question even when the answer is",
-    "> not CPT, and skip the thread if the honest reply is \"it costs money and you asked for free\".",
+    "> say \"I'm part of the CPT team\" in the first line, answer the question even when the answer is",
+    "> not CPT, and skip the thread if the honest reply is \"it costs money and you asked for free\",",
+    "> or if it asks for personal coding experience you do not have.",
     "> Full rules: marketing/community-playbook.md",
     "",
   ];
@@ -259,7 +260,8 @@ function render(groups, args) {
 
   lines.push("## Reply checklist");
   lines.push("");
-  lines.push("- [ ] First line discloses that you build CPT.");
+  lines.push("- [ ] First line says you are part of the CPT team.");
+  lines.push("- [ ] Nothing in it claims coding experience you do not have.");
   lines.push("- [ ] The question is answered even if the answer is another tool.");
   lines.push("- [ ] You have read the whole thread, not just the title.");
   lines.push("- [ ] You are posting from one account, and it has helped in this community before.");

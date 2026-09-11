@@ -64,8 +64,13 @@ say so once rather than treating it as a failure.
 
 Then triage. For each hit, the useful output is a recommendation, not a summary:
 
-- **Reply** — and draft it. First line discloses "I build CPT". The answer to their question comes
-  before any mention of CPT, and if the best answer is WezTerm or tmux, say that.
+- **Reply** — and draft it. First line discloses the connection: "I'm part of the CPT team, so
+  take this with salt." The answer to their question comes before any mention of CPT, and if the
+  best answer is WezTerm or tmux, say that.
+- **Skip** any thread that asks for personal coding experience ("what's your setup", "how do you
+  work"). The person posting is not a developer, so a reply there would be a claim they cannot
+  back. Good threads for them ask "is there a tool that does X", where the honest answer is facts
+  about CPT and its free alternatives.
 - **Skip** — and say why in half a line. Most threads are skips.
 
 ## vs
@@ -123,6 +128,10 @@ Then open the clips. A clip nobody looked at ships with the wrong frame on scree
 
 ## Constraints
 
+- **The user is not a developer.** Instructions, summaries and next steps are written in plain
+  language, with no jargon they would have to look up. Anything that needs a terminal, a file edit,
+  git or a deploy, offer to do yourself. Drafted posts never put coding experience in their mouth —
+  no "what works for me", no "my setup" — and use the team's voice ("we"), not the builder's ("I").
 - Never invent a benchmark, a percentage, or a claim about a competitor.
 - Never write copy that contradicts `public/llms.txt`, `src/lib/plans.ts` (the only place a price is
   written down), or the shipping platforms. Two claims that are always bugs: that anything renews

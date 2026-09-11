@@ -127,7 +127,7 @@ post from your own account. Never auto-post.
 
 **Rules for the human posting:**
 
-- Disclose — "I build CPT" — every time, first line. Required by Reddit and HN, and it
+- Disclose — "I'm part of the CPT team" — every time, first line. Required by Reddit and HN, and it
   converts better than pretending.
 - Answer the question even when CPT is not the answer. Recommend WezTerm when WezTerm is
   right. That is what makes the account credible enough for the CPT mentions to land.
