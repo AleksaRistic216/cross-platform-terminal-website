@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Fragment, type ReactNode } from "react";
 
@@ -84,6 +85,30 @@ export default function GuideBody({ blocks }: { blocks: Block[] }) {
                   ))}
                 </code>
               </pre>
+            );
+
+          case "image":
+            return (
+              <figure key={i} className="flex flex-col gap-3">
+                {/* On a phone a wide capture shrinks past legibility; a tap opens it at full size. */}
+                <a href={block.src} target="_blank" rel="noopener noreferrer">
+                <Image
+                  src={block.src}
+                  alt={block.alt}
+                  width={block.width}
+                  height={block.height}
+                  sizes="(min-width: 768px) 768px, 100vw"
+                  className="w-full h-auto rounded-xl border"
+                  // Never wider than the capture itself: an upscaled screenshot is a blurry one.
+                  style={{ borderColor: "var(--color-border)", maxWidth: block.width }}
+                />
+                </a>
+                {block.caption && (
+                  <figcaption className="text-sm leading-relaxed" style={{ color: "var(--color-muted)" }}>
+                    <Inline text={block.caption} />
+                  </figcaption>
+                )}
+              </figure>
             );
 
           case "note":
