@@ -183,6 +183,10 @@ https://www.crossplatformterminal.com/changelog
 2. Claude searches Reddit and HN for people asking questions CPT can help with, and tells you which
    threads are worth answering. It writes the replies for you.
 3. You open each thread, read it, and post the reply **yourself**, from your own account.
+4. Claude also makes **one new piece every week**, even when no threads turn up: a new guide on the
+   website, an article to repost on dev.to, or a directory listing. The list of what's done and
+   what's next is in `marketing/content-pipeline.md`. Tell Claude what you posted so that list
+   stays true.
 
 Claude writes; **you** post. Nothing here posts for you, on purpose.
 

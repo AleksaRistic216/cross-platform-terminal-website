@@ -31,15 +31,27 @@ the draft.
 
 ## weekly
 
-1. `node scripts/mention-watch.mjs --days 7`
+**Every weekly run ends with at least one new, ready-to-use piece.** Threads and releases depend on
+other people and on the release calendar, so a week where both come up empty is normal — and
+"nothing new" is not an acceptable result. Read `marketing/content-pipeline.md` first: it is the
+record of what has already been drafted, posted or submitted, and the backlog to draw from.
+
+1. `node scripts/mention-watch.mjs --days 14` — HN threads stay open for replies about two weeks.
 2. Read the queue file it wrote. For each thread, say whether it is worth a reply and why —
    applying `marketing/community-playbook.md`, especially: skip it if the honest answer is another
    tool, and skip it if they asked for something free.
-3. `node scripts/social-queue.mjs --weekly`
-4. Read the drafts back to the user and offer edits.
-5. Once a quarter, also run `vs`.
+3. If the pipeline shows releases not yet covered, `node scripts/social-queue.mjs --weekly` and
+   check the drafts against the release notes (see `release`). If this week's releases are already
+   covered, skip this step — do not regenerate a draft the user already edited or deleted.
+4. **Make one new piece** — the first item under "Next up" in the pipeline. In order of payoff:
+   a new guide page (`page` mode, including `npm test`), a dev.to repost of an existing guide, a
+   directory listing, a feature spotlight post. Draft it in full, ready to paste or merge.
+5. Update `content-pipeline.md`: move what you drafted to "Drafted", and ask the user what they
+   actually posted last week so "Done" stays true. Top the backlog up if it is running low.
+6. Once a quarter, also run `vs`.
 
 Keep this short. Twenty minutes of the user's attention is the budget; a long report defeats it.
+Lead with the ready-to-use piece, not with what the scripts found.
 
 ## release
 
