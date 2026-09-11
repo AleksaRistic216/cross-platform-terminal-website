@@ -29,7 +29,7 @@ const features = [
       </svg>
     ),
     title: "Shells That Outlive the Window",
-    body: "Switch on “Keep shells running when the app closes” and your terminals move into a background daemon. Quit CPT, open it again, and the same shells are waiting - scrollback intact, that half-hour build still running. Settings → Terminal Sessions shows what is held, and cpt session ls reaches them from any shell.",
+    body: "Switch on “Keep shells running when the app closes” and your terminals move into a background daemon. Quit CPT, open it again, and the same shells are waiting - scrollback intact, that half-hour build still running. Settings → Terminal Sessions shows what is held and opens any of it in a pane again.",
   },
   {
     icon: (

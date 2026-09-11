@@ -16,7 +16,9 @@ export type Block =
   | { kind: "list"; items: string[] }
   | { kind: "steps"; items: string[] }
   | { kind: "code"; lines: string[] }
-  | { kind: "note"; text: string };
+  | { kind: "note"; text: string }
+  /** A capture of the real product, under public/. Width and height are the file's own pixels. */
+  | { kind: "image"; src: string; alt: string; width: number; height: number; caption?: string };
 
 export type Guide = {
   slug: string;
@@ -170,26 +172,36 @@ export const GUIDES: Guide[] = [
       { kind: "h2", text: "A terminal that detaches on its own" },
       {
         kind: "p",
-        text: "The fourth option is for the terminal to run its shells outside the UI process in the first place, so closing the window is not an event the shell can notice. Cross Platform Terminal does this behind one setting — Settings, then Terminal, then “Keep shells running when the app closes”.",
+        text: "The fourth option is for the terminal to run its shells outside the UI process in the first place, so closing the window is not an event the shell can notice. Cross Platform Terminal does this behind one checkbox: Settings, then Widgets, then Terminal — “Keep shells running when the app closes”.",
+      },
+      {
+        kind: "image",
+        src: "/shots/keep-shells-running-setting.png",
+        alt: "CPT's terminal settings with “Keep shells running when the app closes” switched on, and below it the limits for how long a detached session is kept and how many can exist at once.",
+        width: 600,
+        height: 150,
+        caption:
+          "The setting in CPT 0.5.7. The two lines under it decide how long a background session is kept before it is ended (a day, by default) and how many there can be at once.",
       },
       {
         kind: "p",
-        text: "With it on, shells run in a background daemon rather than inside the app. Close CPT with a build running, reopen it, and the session is there with its scrollback and the build still going. There is no prefix key and no second set of keybindings, because it is the same panes and tabs you were already using.",
+        text: "With it on, shells run in a background process rather than inside the app. Close CPT with a server or a build running, reopen it, and the pane comes back with its scrollback and the process still going. There is no prefix key and no second set of keybindings, because it is the same panes and tabs you were already using.",
       },
       {
-        kind: "code",
-        lines: [
-          "cpt session ls       # sessions on this machine and profile",
-          "cpt session attach   # reattach one",
-          "cpt session kill     # end one",
-        ],
+        kind: "image",
+        src: "/shots/terminal-sessions-window.png",
+        alt: "CPT reopened after being closed: a pane still showing a Python web server that kept running, and the Terminal Sessions window listing three sessions — one open here, two detached, each with Open and End buttons.",
+        width: 1112,
+        height: 424,
+        caption:
+          "Settings → Terminal Sessions, two minutes after closing CPT and opening it again. The server started in api-server never stopped and is back in its pane; the shells in web-app and infra kept running in the background, and Open puts either one back in a pane.",
       },
       {
         kind: "list",
         items: [
-          "Closing a single terminal still ends that shell — only closing the app detaches. That distinction is deliberate: closing a pane should mean what it says.",
+          "Closing a pane that is sitting at a prompt ends that shell, as you would expect. Closing one with something still running asks first: keep it running in the background, or end it. Closing the whole app never asks — everything is kept.",
           "Sessions are local to the machine and to the profile. This is not a replacement for tmux over SSH, which is a different problem.",
-          "They are listed in Settings under Terminal Sessions as well as from the CLI above.",
+          "Every session is listed under Settings → Terminal Sessions, where you can open it in a pane or end it.",
         ],
       },
       { kind: "h2", text: "Which to pick" },

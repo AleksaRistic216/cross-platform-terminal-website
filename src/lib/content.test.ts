@@ -72,7 +72,9 @@ function linksIn(block: Block): string[] {
       ? block.items.join(" ")
       : block.kind === "code"
         ? ""
-        : block.text;
+        : block.kind === "image"
+          ? (block.caption ?? "")
+          : block.text;
   return [...text.matchAll(INLINE_LINK)].map((m) => m[2]);
 }
 
