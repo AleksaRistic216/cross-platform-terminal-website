@@ -24,7 +24,26 @@ const POLL_INTERVAL_MS = 2500;
  */
 const POLL_TIMEOUT_MS = 4 * 60_000;
 
-type State = "paying" | "provisioning" | "ready" | "failed" | "unavailable" | "slow";
+/**
+ * How many consecutive uninformative polls before the page admits it cannot see anything.
+ *
+ * A single failed poll is a blip and saying so would be alarming noise, so the spinner rides it
+ * out. What the spinner must not do is ride out a real outage indefinitely: "Setting up your
+ * account" and "we cannot reach the thing that would tell us" look identical from a chair, and the
+ * second one deserves to say so — the buyer can stop watching a page that will never move and go
+ * and read their email instead. Three ticks is a little under ten seconds.
+ */
+const BLIND_POLLS_BEFORE_ADMITTING = 3;
+
+type State =
+  | "paying"
+  | "provisioning"
+  | "ready"
+  | "failed"
+  | "unavailable"
+  | "slow"
+  /** Our own status endpoint is unreachable or answering "I cannot tell". */
+  | "unreachable";
 
 export default function PurchaseComplete({ checkoutId }: { checkoutId: string }) {
   const [state, setState] = useState<State>(checkoutId ? "paying" : "unavailable");
@@ -37,6 +56,7 @@ export default function PurchaseComplete({ checkoutId }: { checkoutId: string })
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout>;
     const startedAt = Date.now();
+    let blindPolls = 0;
 
     const tick = async () => {
       if (cancelled) return;
@@ -45,6 +65,9 @@ export default function PurchaseComplete({ checkoutId }: { checkoutId: string })
         setState("slow");
         return;
       }
+
+      // Whether this tick learned anything about the purchase, as opposed to failing to ask.
+      let informed = false;
 
       try {
         const res = await fetch("/api/polar/status", {
@@ -67,14 +90,31 @@ export default function PurchaseComplete({ checkoutId }: { checkoutId: string })
           setState("failed");
           return;
         }
-        if (data.state === "paying" || data.state === "provisioning") {
+
+        /*
+         * `unavailable` is the status route reporting that its own lookup threw, and a bare
+         * `{ state: "unavailable" }` is Polar not being configured at all. Both answer the
+         * question with "I cannot tell", which is not progress and must not read as progress.
+         * A 429 arrives with no state and lands here too.
+         */
+        if ((data.state === "paying" || data.state === "provisioning") && !data.unavailable) {
+          informed = true;
           setState(data.state);
         }
       } catch {
         // Offline or a blip — try again on the next tick.
       }
 
-      if (!cancelled) timer = setTimeout(tick, POLL_INTERVAL_MS);
+      if (cancelled) return;
+
+      if (informed) {
+        blindPolls = 0;
+      } else if (++blindPolls >= BLIND_POLLS_BEFORE_ADMITTING) {
+        setState("unreachable");
+      }
+
+      // Polling continues either way: an outage that clears puts the page back on its real state.
+      timer = setTimeout(tick, POLL_INTERVAL_MS);
     };
 
     timer = setTimeout(tick, 500);
@@ -160,6 +200,25 @@ export default function PurchaseComplete({ checkoutId }: { checkoutId: string })
               Your payment went through and your account is being set up. The email with your
               sign-in link arrives on its own, so you can close this page. If nothing has come
               within an hour, reply to your Polar receipt and we&apos;ll sort it out.
+            </p>
+            <Link
+              href="/download"
+              className="block w-full py-2.5 rounded-lg font-semibold text-sm cpt-accent-btn"
+            >
+              Go to downloads
+            </Link>
+          </>
+        ) : state === "unreachable" ? (
+          <>
+            <h1 className="text-lg font-semibold mb-2" style={{ color: "var(--color-foreground)" }}>
+              Payment received — we can&apos;t show you the rest
+            </h1>
+            <p className="text-sm mb-6" style={{ color: "var(--color-muted)" }}>
+              Polar only sends you here once the card has cleared, so your payment is fine. This
+              page just can&apos;t reach our end to confirm the details, so it won&apos;t update
+              itself. Your sign-in link is emailed separately and is on its way regardless — close
+              this page and watch your inbox. If nothing arrives within an hour, reply to your Polar
+              receipt and we&apos;ll sort it out.
             </p>
             <Link
               href="/download"
