@@ -138,11 +138,15 @@ half of the site drifts on its own.
 | `/faq` | `src/app/faq/page.tsx` | FAQ accordion, `FAQPage` JSON-LD |
 | `/download` | `src/app/download/page.tsx` | Per-platform downloads (server component, ISR) |
 | `/set-password` | `src/app/set-password/page.tsx` | Choose a password from an emailed link, or ask for a new link. `noindex` |
-| `/api/create-invoice` | `src/app/api/create-invoice/route.ts` | Starts a purchase |
-| `/api/licence-status` | `src/app/api/licence-status/route.ts` | Has the purchase finished provisioning? |
+| `/purchase/complete` | `src/app/purchase/complete/page.tsx` | Where Polar returns a card buyer; waits for provisioning. `noindex` |
+| `/api/create-invoice` | `src/app/api/create-invoice/route.ts` | Starts a crypto purchase |
+| `/api/licence-status` | `src/app/api/licence-status/route.ts` | Has the crypto purchase finished provisioning? |
 | `/api/password-link` | `src/app/api/password-link/route.ts` | Emails a set-password link; same answer for unknown addresses |
 | `/api/set-password` | `src/app/api/set-password/route.ts` | Sets the password with a link's token |
 | `/api/payment-webhook` | `src/app/api/payment-webhook/route.ts` | NOWPayments IPN → provisioning |
+| `/api/polar/checkout` | `src/app/api/polar/checkout/route.ts` | Starts a card subscription; returns a Polar checkout URL |
+| `/api/polar/webhook` | `src/app/api/polar/webhook/route.ts` | Polar `order.paid` / `subscription.revoked` → provisioning |
+| `/api/polar/status` | `src/app/api/polar/status/route.ts` | Has the card purchase cleared *and* provisioned? |
 | `/api/renewal-reminders` | `src/app/api/renewal-reminders/route.ts` | Daily cron; emails subscriptions about to lapse |
 
 ## Component tree
@@ -300,9 +304,16 @@ not be read in its own hero.
 
 ## Checkout flow
 
+Two ways to pay, one way to be provisioned. Both ends meet at `provisionPurchase`, which neither
+knows nor cares which of them called it — so an account, a password link and a licence look
+identical whichever button was pressed, and a buyer can switch between them without ending up with
+two accounts.
+
+**Crypto — NOWPayments.** A subscription that is *bought*: one invoice buys one period.
+
 ```
 Pricing "Subscribe" (monthly | yearly)
-  └─ email step  → POST /api/create-invoice
+  └─ email step → "Pay with crypto" → POST /api/create-invoice
        ├─ lookup failed → 503, no invoice (see "Why the lookup fails closed")
        ├─ perpetual → portal link, nothing to sell (grandfathered €24 licence)
        ├─ free (100% discount) → provisionPurchase() → success
@@ -310,6 +321,32 @@ Pricing "Subscribe" (monthly | yearly)
             └─ poll POST /api/licence-status {email, notBefore} every 4s
                  └─ provisioned:true → success screen
 ```
+
+**Card — Polar.** A subscription that is *billed*: Polar charges the card every period until it is
+cancelled. See "Polar, and what it is not" below.
+
+```
+Pricing "Subscribe" (monthly | yearly)
+  └─ email step → "Pay by card" → POST /api/polar/checkout
+       ├─ lookup failed → 503, no checkout
+       ├─ perpetual → portal link, nothing to sell
+       ├─ already has time on the clock → refused, with the date it runs to
+       └─ otherwise → redirect to Polar's hosted checkout
+            └─ back to /purchase/complete?checkout_id=…
+                 ├─ poll POST /api/polar/status every 2.5s
+                 │    paying → provisioning → ready
+                 └─ meanwhile: Polar → POST /api/polar/webhook (order.paid)
+                      └─ provisionPurchase(email, current_period_end + grace)
+```
+
+The redirect races the webhook and usually wins, which is why `/purchase/complete` waits on our own
+licence rather than on Polar's "payment succeeded". Saying "check your email" before the email has
+been sent is the same lie the old "I've paid" button told.
+
+**Why the card path refuses an address that still has time.** Polar bills from the day the
+subscription starts, so opening one for somebody with four months of crypto-bought access left
+would charge them for days they already own. There is no partial-credit mechanism to fall back on,
+so it declines and says when to come back. A crypto payment still stacks on the end, as ever.
 
 The success screen is driven by the licence's date, never by a button. `provisionPurchase` grants
 **last**, so a true result means the account exists and the email has gone out. An earlier version
@@ -366,10 +403,13 @@ provisionPurchase (new subscriber)
 **€7.49/month or €67.41/year, prepaid.** Every number lives in `src/lib/plans.ts`; nothing else may
 hard-code a price or a period length.
 
-Crypto cannot be auto-charged, so this is a subscription that is *bought* rather than *billed*.
-A payment moves the licence's `expiresAt` forward and nothing is stored to charge anyone again.
-Access ends by itself: the Client API drops expired licences from its response and the Terminal API
-re-checks on every session poll, so no revocation step exists anywhere.
+**Paid by card, it is billed; paid in crypto, it is bought.** Crypto cannot be auto-charged, so a
+crypto payment moves the licence's `expiresAt` forward and nothing is stored to charge anyone again.
+Polar can and does auto-charge, so a card subscription renews itself until it is cancelled.
+
+Either way access ends the same, and by itself: the Client API drops expired licences from its
+response and the Terminal API re-checks on every session poll. The only thing that ever *revokes*
+early is a Polar `subscription.revoked` — a refund or a chargeback, not a cancellation.
 
 ### The date is absolute, and that is the whole design
 
@@ -408,13 +448,55 @@ answers `{perpetual: true}` rather than charging them, and `provisionPurchase` b
 granting — necessary because `grantLicence` *overwrites* the expiry, so dating one of these would
 take away the thing it sold.
 
+### Polar, and what it is not
+
+Polar is the **merchant of record** for the card path and nothing else: it takes the payment, holds
+the card, charges it again each period, handles VAT and issues the invoice. Its own licence-key
+benefit is deliberately unused, and the product it sells here should be created with **no benefits
+attached at all**.
+
+That is not an aesthetic preference. A licence granted by Polar would exist only for people who paid
+by card, so the app would have two places to look, a buyer moving between payment methods would end
+up with two identities, and the Client API — which the Terminal API actually checks on every session
+poll — would not be either of them. One licence store, `lib/client-api.ts`, reached through
+`provisionPurchase`, is the whole design.
+
+**The date always comes from Polar's `current_period_end`**, never recomputed here. That is the span
+the card was actually charged for, so:
+
+- a redelivered webhook writes the same absolute date twice, which is a no-op — the same property
+  the crypto path buys by encoding `{months, base}` into its order id;
+- a renewal needs no special case, because Polar pushes the period forward and the licence follows;
+- a cancellation needs no handling at all, because Polar simply stops charging and the licence lapses
+  on its own date.
+
+The one check worth making is that the period ends *after* the payment that bought it. A
+`current_period_end` from before the renewal rolled over would lock a paid-up customer out until the
+next cycle, so that answers 5xx and lets Polar redeliver.
+
+`subscription.revoked` is the exception that does need code: Polar cutting access early, which means
+a refund or a chargeback. It sets the expiry to now — unless the account holds a licence that
+outlives this subscription, which means they also paid in crypto, and that time is not Polar's to
+take back.
+
+**Sandbox is a separate world.** `POLAR_SERVER=sandbox` points at `sandbox-api.polar.sh`, with its
+own organisation, products, tokens, webhook secret and test cards. The product ids and the access
+token always move together with it; a production id against a sandbox token is a 404, not a warning.
+
 ### Renewal reminders
 
 `/api/renewal-reminders` runs daily from the cron in `vercel.json`, guarded by `CRON_SECRET` (unset
 ⇒ the route refuses, rather than being an open endpoint that mails every subscriber on demand). It
 asks the Client API for licences expiring inside the widest band and writes at 7, 3 and 1 days out,
 counted in **calendar** days so a cron that fires at a slightly different time each day cannot skip
-a band or repeat one. Nothing auto-renews, so this email is the entire renewal mechanism.
+a band or repeat one. For a crypto subscriber this email is the entire renewal mechanism.
+
+**Card subscribers are skipped.** Polar charges them itself, and the licence carries no record of
+how it was paid for, so the run asks Polar for its active subscriptions and drops those addresses —
+otherwise every card subscriber would be told their access ends in seven days, three days before
+Polar renewed it anyway. If Polar cannot be reached the whole run aborts rather than mailing
+everyone: a crypto subscriber losing one nudge still has days of access and the next band, while a
+false alarm to a paying customer is unrecoverable.
 
 ## Download page
 
