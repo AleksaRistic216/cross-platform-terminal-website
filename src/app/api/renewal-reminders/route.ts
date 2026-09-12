@@ -1,6 +1,7 @@
 import { getExpiringLicences } from "@/lib/client-api";
 import { sendRenewalReminder } from "@/lib/email";
 import { GRACE_DAYS, paidThroughOf } from "@/lib/plans";
+import { activeSubscriberEmails, polarConfigured } from "@/lib/polar";
 
 /**
  * The renewal nudge, run once a day by the Vercel cron in `vercel.json`.
@@ -8,6 +9,9 @@ import { GRACE_DAYS, paidThroughOf } from "@/lib/plans";
  * Nothing here charges anyone. A crypto subscription has no stored instrument to bill, so renewing
  * is an action the subscriber has to take, and this email is the only thing that prompts it —
  * without it a subscription lapses because someone forgot, not because they decided to stop.
+ *
+ * Card subscribers are the exception and are skipped: Polar charges them itself, so the same email
+ * would be a false alarm sent days before a renewal that was always going to happen.
  */
 
 /** Days before the period ends that we write. One email per band, so three over the last week. */
@@ -56,7 +60,24 @@ export async function GET(request: Request) {
     return Response.json({ error: "Lookup failed" }, { status: 500 });
   }
 
+  /*
+   * Who Polar is still billing. Fail closed if this cannot be answered: sending nothing costs a few
+   * crypto subscribers one nudge — they still have days of access left and the next run catches the
+   * following band — while sending anyway would tell card subscribers their access was about to end
+   * when it was not. A wrong email to a paying customer is the worse of the two.
+   */
+  let autoRenewing = new Set<string>();
+  if (polarConfigured()) {
+    try {
+      autoRenewing = await activeSubscriberEmails();
+    } catch (e) {
+      console.error("[reminders] Could not list Polar subscriptions; skipping this run:", e);
+      return Response.json({ error: "Polar lookup failed" }, { status: 500 });
+    }
+  }
+
   let sent = 0;
+  let autoRenewed = 0;
   const failed: string[] = [];
 
   for (const { username, expiresAt } of expiring) {
@@ -66,6 +87,11 @@ export async function GET(request: Request) {
 
     if (!BANDS.includes(daysLeft)) continue;
     if (!username.includes("@")) continue; // the username is the address we email
+
+    if (autoRenewing.has(username.toLowerCase())) {
+      autoRenewed += 1;
+      continue;
+    }
 
     try {
       await sendRenewalReminder(username, endsAt, daysLeft);
@@ -77,7 +103,15 @@ export async function GET(request: Request) {
     }
   }
 
-  console.log(`[reminders] Considered ${expiring.length}, sent ${sent}, failed ${failed.length}`);
+  console.log(
+    `[reminders] Considered ${expiring.length}, sent ${sent}, ` +
+      `skipped ${autoRenewed} auto-renewing, failed ${failed.length}`
+  );
 
-  return Response.json({ considered: expiring.length, sent, failed: failed.length });
+  return Response.json({
+    considered: expiring.length,
+    sent,
+    autoRenewing: autoRenewed,
+    failed: failed.length,
+  });
 }

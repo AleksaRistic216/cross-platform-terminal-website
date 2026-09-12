@@ -15,7 +15,7 @@ const faqs = [
   {
     id: "subscription",
     q: "Is this a subscription?",
-    a: "Yes. €7.49 a month, or €67.41 a year — 25% less, and one crypto payment instead of twelve. It is prepaid rather than recurring: nothing is stored to charge you again, so each period is one you choose to buy. There is a 3-day cushion past the end of a period so a renewal still confirming cannot lock you out.",
+    a: "Yes. €7.49 a month, or €67.41 a year — 25% less, and one payment instead of twelve. Pay by card and it renews itself until you cancel. Pay in crypto and nothing is stored to charge you again, so each period is one you choose to buy. Either way there is a 3-day cushion past the end of a period, so a renewal still going through cannot lock you out.",
   },
   {
     id: "updates",
@@ -30,12 +30,12 @@ const faqs = [
   {
     id: "cancel",
     q: "How do I cancel?",
-    a: "You don't — there is nothing to cancel. Nothing is stored that could charge you again, so a subscription ends by you not renewing it. When the period runs out the app stops opening; your account and settings stay where they are if you come back later.",
+    a: "If you paid by card, cancel from the account link on your Polar receipt — it stops at the end of the period you have already paid for. If you paid in crypto there is nothing to cancel: nothing is stored that could charge you again, so the subscription ends by you not renewing it. Either way, when the period runs out the app stops opening and your account and settings stay where they are if you come back later.",
   },
   {
     id: "renewing",
     q: "How does renewing work?",
-    a: "We email you 7 days, 3 days and 1 day before your period ends, with a link back here. Paying again adds the new period on to the end of the current one, so renewing early never costs you the time you have already paid for. Crypto cannot be auto-charged, so renewing is always something you do deliberately.",
+    a: "By card, it renews itself: Polar charges the same card at the start of each period and emails you the invoice, so there is nothing to do and no reminder to miss. In crypto it is deliberate — crypto cannot be auto-charged, so we email you 7 days, 3 days and 1 day before your period ends, with a link back here. Paying again adds the new period on to the end of the current one, so renewing early never costs you time you have already paid for.",
   },
   {
     id: "lifetime",
@@ -55,7 +55,7 @@ const faqs = [
   {
     id: "payment",
     q: "How do I pay?",
-    a: "Crypto, through NOWPayments. That is the only payment method today. Cards are not supported yet.",
+    a: "Card or crypto. Cards go through Polar, who are the merchant of record — they take the payment, invoice you, and charge the same card each period until you cancel. Crypto goes through NOWPayments and buys one period at a time, with nothing stored to charge you again.",
   },
   {
     id: "install",
@@ -70,7 +70,7 @@ const faqs = [
   {
     id: "refunds",
     q: "Do you offer refunds?",
-    a: "No — all sales are final, including part-used periods. Crypto payments cannot be reversed once they confirm, so there is no mechanism to send one back. Since there is no trial either, ask anything you need to know before you buy: open an issue on the release repository and you will get an answer. A single month is the cheapest way to find out.",
+    a: "No — all sales are final, part-used periods included. A crypto payment cannot be reversed once it confirms, and a card subscription is cancelled rather than refunded: it stops at the end of the period you have paid for. Since there is no trial either, ask anything you need to know before you buy — open an issue on the release repository and you will get an answer. A single month is the cheapest way to find out.",
   },
   {
     id: "password",

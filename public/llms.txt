@@ -78,13 +78,15 @@ subscription on that account to go further. There is no trial and no free tier.
 ## Pricing
 
 - **€7.49 per month, or €67.41 per year** (25% less than paying monthly).
-- **Prepaid, not recurring.** Crypto cannot be auto-charged, so no payment instrument is stored and nothing renews on its own. Each period is bought deliberately; a subscription ends by not being renewed, and there is nothing to cancel.
-- Renewal reminders go out 7, 3 and 1 days before a period ends. Renewing early stacks the new period on the end of the current one, so unused time is never lost.
-- Access continues for 3 days past the end of a paid period, so a renewal still confirming on-chain cannot lock anyone out.
+- **Two ways to pay, and they behave differently.** By card it is recurring: Polar charges the same card each period until the subscription is cancelled. In crypto it is prepaid: crypto cannot be auto-charged, so no payment instrument is stored, nothing renews on its own, each period is bought deliberately, and there is nothing to cancel.
+- Renewal reminders go out 7, 3 and 1 days before a period ends, to crypto subscribers only — a card subscription renews itself and is not reminded.
+- Renewing early in crypto stacks the new period on the end of the current one, so unused time is never lost. For the same reason the card checkout declines an account that still has time on the clock, rather than billing from today for days already paid for.
+- Access continues for 3 days past the end of a paid period, so a renewal still going through cannot lock anyone out.
 - Every update is included while subscribed — patches, features and future major versions alike.
 - The subscription covers one account. Devices can be released and moved from the licence dialog in the app.
-- Payment is by crypto, through NOWPayments. After the payment confirms, a link for choosing the account password is emailed; it works once, for 30 minutes, and a new one can be requested at [/set-password](/set-password), which is also the lost-password page.
-- All sales are final, part-used periods included. Crypto payments cannot be reversed, so there are no refunds.
+- Payment is by card, through Polar (the merchant of record, who invoice the buyer), or by crypto, through NOWPayments. After the payment lands, a link for choosing the account password is emailed; it works once, for 30 minutes, and a new one can be requested at [/set-password](/set-password), which is also the lost-password page.
+- A card subscription is cancelled from the account link on the Polar receipt, and stops at the end of the period already paid for.
+- All sales are final, part-used periods included. There are no refunds: a crypto payment cannot be reversed, and a card subscription is cancelled rather than refunded.
 - Perpetual €24 licences sold before the switch to a subscription are grandfathered: they never expire and are not converted.
 
 ## Pages

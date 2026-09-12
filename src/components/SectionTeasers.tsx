@@ -23,7 +23,7 @@ const teasers = [
     href: "/pricing",
     eyebrow: "Pricing",
     title: "€7.49 a month",
-    body: "Pay for a month or a year at a time. Nothing renews on its own, and there is nothing to cancel.",
+    body: "A month or a year at a time, by card or in crypto. Card renews itself until you cancel; crypto stores nothing to charge you again.",
   },
   {
     id: "faq",

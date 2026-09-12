@@ -19,7 +19,7 @@ const included: { label: string; footnote?: boolean }[] = [
   { label: "Every update while you are subscribed", footnote: true },
 ];
 
-type ModalState = "closed" | "email" | "payment" | "success" | "perpetual";
+type ModalState = "closed" | "email" | "payment" | "success" | "perpetual" | "alreadyActive";
 
 /** How long to keep asking whether the webhook has landed before telling the buyer to sit tight. */
 const POLL_INTERVAL_MS = 4000;
@@ -39,8 +39,12 @@ export default function Pricing() {
   const [embedUrl, setEmbedUrl] = useState("");
   const [portalUrl, setPortalUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  /** Separate from `loading` so only the button that was pressed shows that it is working. */
+  const [cardLoading, setCardLoading] = useState(false);
   const [error, setError] = useState("");
   const [pollTimedOut, setPollTimedOut] = useState(false);
+  /** When a card checkout is refused because the address still has time on the clock. */
+  const [activeEndsAt, setActiveEndsAt] = useState<string | null>(null);
 
   /*
    * What this particular payment is buying. `newExpiresAt` is the licence date the invoice was
@@ -69,6 +73,7 @@ export default function Pricing() {
     setPortalUrl("");
     setError("");
     setPollTimedOut(false);
+    setActiveEndsAt(null);
     setRenewal(null);
     setCurrentEndsAt(null);
     setNewExpiresAt(null);
@@ -164,6 +169,45 @@ export default function Pricing() {
     };
   }, [modal, email, newExpiresAt]);
 
+  /*
+   * The card path. Polar is the merchant of record: it takes the payment, charges the same card at
+   * the start of every period, and hands back a licence date through its webhook. So unlike the
+   * crypto path there is no widget to embed and no polling to do here — the buyer leaves for
+   * Polar's checkout and comes back to /purchase/complete, which waits for provisioning there.
+   */
+  async function handleCard() {
+    if (!email.includes("@")) {
+      setError("Please enter a valid email address.");
+      return;
+    }
+    setCardLoading(true);
+    setError("");
+    try {
+      const res = await fetch("/api/polar/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, plan }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Failed to start the payment");
+      if (data.perpetual) {
+        setPortalUrl(data.portalUrl);
+        setModal("perpetual");
+        return;
+      }
+      if (data.alreadyActive) {
+        setActiveEndsAt(data.endsAt ?? null);
+        setModal("alreadyActive");
+        return;
+      }
+      // Polar's checkout is its own page, not an embed. Leaving the site is the point.
+      window.location.href = data.url;
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong.");
+      setCardLoading(false);
+    }
+  }
+
   async function handleProceed() {
     if (!email.includes("@")) {
       setError("Please enter a valid email address.");
@@ -219,8 +263,9 @@ export default function Pricing() {
             €7.49 a month.
           </h1>
           <p className="mt-4 text-base" style={{ color: "var(--color-muted)" }}>
-            Pay for a month or a year at a time. Nothing renews on its own, and there is nothing to
-            cancel — when you stop paying, it stops.
+            Pay by card and it renews itself until you cancel. Pay in crypto and nothing is stored to
+            charge you again — you buy a month or a year at a time, and when you stop paying, it
+            stops.
           </p>
         </div>
 
@@ -305,7 +350,7 @@ export default function Pricing() {
                 {plan === "yearly" ? (
                   <>
                     Works out at {euro(selected.perMonth)} a month — {selected.savingPercent}% off the
-                    monthly price, and one crypto payment a year instead of twelve.
+                    monthly price, and one payment a year instead of twelve.
                   </>
                 ) : (
                   <>
@@ -347,13 +392,13 @@ export default function Pricing() {
                 Subscribe — {euro(selected.amount)}
               </button>
               <p className="mt-3 text-center text-xs" style={{ color: "var(--color-muted)" }}>
-                Crypto payment via NOWPayments · we email you a link to set your password
+                Card via Polar, or crypto via NOWPayments · we email you a link to set your password
               </p>
               <p className="mt-1.5 text-center text-xs" style={{ color: "var(--color-muted)", opacity: 0.8 }}>
-                Already subscribed? Paying again extends your current period.
+                Already subscribed? Paying in crypto again extends your current period.
               </p>
               <p className="mt-1.5 text-center text-xs" style={{ color: "var(--color-muted)", opacity: 0.8 }}>
-                All sales are final — no refunds.
+                Crypto payments are final and cannot be refunded.
               </p>
             </div>
           </div>
@@ -387,9 +432,8 @@ export default function Pricing() {
                     Where should we send your sign-in link?
                   </h3>
                   <p className="text-sm mb-5" style={{ color: "var(--color-muted)" }}>
-                    {euro(selected.amount)} for {plan === "yearly" ? "a year" : "a month"}. If this
-                    address is already subscribed, the new period is added on to the end of the
-                    current one.
+                    {euro(selected.amount)} for {plan === "yearly" ? "a year" : "a month"}. This is
+                    the address your sign-in link goes to, and the one you sign in to the app with.
                   </p>
 
                   <label className="sr-only" htmlFor="cpt-email">
@@ -434,9 +478,8 @@ export default function Pricing() {
                   />
 
                   <p className="text-xs mb-4 leading-relaxed" style={{ color: "var(--color-muted)" }}>
-                    Crypto payments cannot be reversed, so this payment is final and cannot be
-                    refunded. Nothing is stored to charge you again — the next period is only ever
-                    something you choose to buy.
+                    A discount code here applies to the crypto payment. For card payments, enter your
+                    code on Polar&apos;s checkout page.
                   </p>
 
                   {error && (
@@ -445,12 +488,67 @@ export default function Pricing() {
                     </p>
                   )}
 
+                  {/*
+                   * Two ways to pay, and they behave differently enough that each says so before it
+                   * is pressed. Card is first because it renews itself, which is what most people
+                   * expect a subscription to do; crypto stays because it is what CPT sold first and
+                   * it is the only option that stores nothing at all.
+                   */}
                   <button
-                    onClick={handleProceed}
-                    disabled={loading}
+                    onClick={handleCard}
+                    disabled={cardLoading || loading}
                     className="w-full py-2.5 rounded-lg font-semibold text-sm cpt-accent-btn"
                   >
-                    {loading ? "Creating payment…" : "Continue to payment"}
+                    {cardLoading ? "Opening checkout…" : `Pay by card — ${euro(selected.amount)}`}
+                  </button>
+                  <p className="mt-2 mb-4 text-xs leading-relaxed" style={{ color: "var(--color-muted)" }}>
+                    Handled by Polar, who invoice you and charge the same card{" "}
+                    {plan === "yearly" ? "every year" : "every month"} until you cancel. Cancel any
+                    time from the link on your receipt.
+                  </p>
+
+                  <button
+                    onClick={handleProceed}
+                    disabled={loading || cardLoading}
+                    className="w-full py-2.5 rounded-lg font-semibold text-sm border cpt-quiet"
+                    style={{ borderColor: "var(--color-border)", color: "var(--color-foreground)" }}
+                  >
+                    {loading ? "Creating payment…" : "Pay with crypto"}
+                  </button>
+                  <p className="mt-2 text-xs leading-relaxed" style={{ color: "var(--color-muted)" }}>
+                    One payment for one period, and nothing is stored to charge you again. Crypto
+                    payments cannot be reversed, so they are final and cannot be refunded.
+                  </p>
+                </div>
+              )}
+
+              {modal === "alreadyActive" && (
+                <div className="relative rounded-2xl p-8 text-center" style={{ background: "var(--color-surface)" }}>
+                  <CloseButton onClick={closeModal} />
+                  <h3 className="text-lg font-semibold mb-2" style={{ color: "var(--color-foreground)" }}>
+                    You already have time on the clock
+                  </h3>
+                  <p className="text-sm mb-6" style={{ color: "var(--color-muted)" }}>
+                    <strong style={{ color: "var(--color-foreground)" }}>{email}</strong> is subscribed
+                    until{" "}
+                    <strong style={{ color: "var(--color-foreground)" }}>
+                      {activeEndsAt ? formatDate(new Date(activeEndsAt)) : "a date in the future"}
+                    </strong>
+                    . A card subscription would start billing today for days you have already paid
+                    for, so we have not opened one. Come back when it is nearly up — or pay with
+                    crypto now, which adds the new period on to the end of this one.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setModal("email");
+                      setActiveEndsAt(null);
+                    }}
+                    className="block w-full py-2.5 rounded-lg font-semibold text-sm mb-2 cpt-accent-btn"
+                  >
+                    Back
+                  </button>
+                  <button onClick={closeModal} className="w-full py-2 rounded-lg text-sm cpt-quiet" style={{ color: "var(--color-muted)" }}>
+                    Close
                   </button>
                 </div>
               )}
