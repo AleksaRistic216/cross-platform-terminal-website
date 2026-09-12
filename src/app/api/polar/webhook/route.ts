@@ -1,3 +1,5 @@
+import { createHash } from "node:crypto";
+
 import { validateEvent, WebhookVerificationError } from "@polar-sh/sdk/webhooks";
 import type { Order } from "@polar-sh/sdk/models/components/order.js";
 import type { Subscription } from "@polar-sh/sdk/models/components/subscription.js";
@@ -44,6 +46,7 @@ export async function POST(request: Request) {
     event = validateEvent(body, headers, webhookSecret());
   } catch (e) {
     if (e instanceof WebhookVerificationError) {
+      console.error(`[polar/webhook] Refused a delivery: ${describeRejection(e, headers)}`);
       return Response.json({ error: "Invalid signature" }, { status: 401 });
     }
     /*
@@ -62,6 +65,59 @@ export async function POST(request: Request) {
     default:
       // Subscribed to something extra in the dashboard. Nothing to do, and no reason to retry.
       return Response.json({ ok: true });
+  }
+}
+
+/**
+ * Why a delivery was refused, in enough detail to tell the causes apart.
+ *
+ * A 401 out of `validateEvent` has three quite different meanings — the secret does not match, the
+ * `webhook-timestamp` falls outside Standard Webhooks' five-minute tolerance, or the signature
+ * headers never arrived at all. From Polar's delivery list those look identical, so diagnosing a
+ * dead endpoint otherwise means guessing at configuration and spending a real card payment per
+ * guess. That is exactly how this went wrong once already.
+ *
+ * The staleness case is the one worth naming explicitly: Polar's "Redeliver" button replays an
+ * event that was signed minutes or hours earlier, so a replay of anything older than the tolerance
+ * is refused however correct the secret is. Read as "bad secret", it sends you off changing
+ * settings that were never wrong.
+ *
+ * Nothing logged here is a secret. The ids are Polar's own, and the configured secret appears only
+ * as a truncated hash — enough to compare against the value in the dashboard, not enough to sign
+ * anything with.
+ */
+function describeRejection(e: WebhookVerificationError, headers: Record<string, string>): string {
+  const signedAt = Number(headers["webhook-timestamp"]);
+  const age = Number.isFinite(signedAt) ? Math.round(Date.now() / 1000 - signedAt) : null;
+
+  return [
+    `reason=${JSON.stringify(e.message)}`,
+    `webhook-id=${headers["webhook-id"] ?? "<missing>"}`,
+    age === null
+      ? "webhook-timestamp=<missing or unparseable>"
+      : `signed ${age}s ago (tolerance 300s)`,
+    `secret=${secretFingerprint()}`,
+  ].join(" ");
+}
+
+/**
+ * A fingerprint of the configured signing secret: the first 8 hex of its SHA-256, and its length.
+ *
+ * Enough to tell whether the value deployed here is the same string as the one Polar shows — run
+ * the same hash over that value and compare — while being useless for forging a signature. The
+ * length catches the copy-paste accidents a hash alone would only report as "different": a
+ * truncated paste, a wrapping quote, a doubled value.
+ */
+function secretFingerprint(): string {
+  try {
+    const secret = webhookSecret();
+    const digest = createHash("sha256").update(secret).digest("hex").slice(0, 8);
+    return `sha256:${digest} len=${secret.length}`;
+  } catch {
+    // `webhookSecret()` throws when the variable is unset, which cannot reach this branch — an
+    // unset secret fails before `validateEvent` and leaves as a 202. Worth reporting rather than
+    // swallowing: seeing it means the environment changed under a running request.
+    return "<not set>";
   }
 }
 
