@@ -1,8 +1,10 @@
 import { createHash } from "node:crypto";
 
-import { validateEvent, WebhookVerificationError } from "@polar-sh/sdk/webhooks";
 import type { Order } from "@polar-sh/sdk/models/components/order.js";
 import type { Subscription } from "@polar-sh/sdk/models/components/subscription.js";
+import { WebhookOrderPaidPayload$inboundSchema } from "@polar-sh/sdk/models/components/webhookorderpaidpayload.js";
+import { WebhookSubscriptionRevokedPayload$inboundSchema } from "@polar-sh/sdk/models/components/webhooksubscriptionrevokedpayload.js";
+import { Webhook, WebhookVerificationError } from "standardwebhooks";
 
 import { getLicence, grantLicence } from "@/lib/client-api";
 import { expiryFor } from "@/lib/plans";
@@ -41,31 +43,86 @@ export async function POST(request: Request) {
     headers[key] = value;
   });
 
-  let event;
+  let payload;
   try {
-    event = validateEvent(body, headers, webhookSecret());
+    payload = verifyDelivery(body, headers);
   } catch (e) {
     if (e instanceof WebhookVerificationError) {
       console.error(`[polar/webhook] Refused a delivery: ${describeRejection(e, headers)}`);
       return Response.json({ error: "Invalid signature" }, { status: 401 });
     }
-    /*
-     * Signed by Polar but unparseable — most likely an event type this SDK version predates. A
-     * retry cannot fix that, so accept it loudly rather than making Polar redeliver it for days.
-     */
-    console.error("[polar/webhook] Signed payload could not be parsed:", e);
-    return Response.json({ ok: true, ignored: true }, { status: 202 });
+    // An unset secret lands here. Ours to fix rather than Polar's, but a retry costs nothing.
+    console.error("[polar/webhook] Could not verify a delivery:", e);
+    return Response.json({ error: "Verification failed" }, { status: 500 });
   }
 
-  switch (event.type) {
-    case "order.paid":
-      return handleOrderPaid(event.data);
-    case "subscription.revoked":
-      return handleRevoked(event.data);
-    default:
-      // Subscribed to something extra in the dashboard. Nothing to do, and no reason to retry.
-      return Response.json({ ok: true });
+  const type = (payload as { type?: unknown }).type;
+
+  /*
+   * Parsing is kept out of the handlers deliberately. A schema failure means this SDK version
+   * predates the payload Polar sent, which no redelivery can fix, so it is accepted and logged. A
+   * failure *inside* a handler is the opposite case — worth a 5xx so Polar tries again — and
+   * sharing one `try` would quietly turn a failed provisioning into "accepted, ignored".
+   */
+  if (type === "order.paid") {
+    let event;
+    try {
+      event = WebhookOrderPaidPayload$inboundSchema.parse(payload);
+    } catch (e) {
+      console.error("[polar/webhook] Signed order.paid payload could not be parsed:", e);
+      return Response.json({ ok: true, ignored: true }, { status: 202 });
+    }
+    return handleOrderPaid(event.data);
   }
+
+  if (type === "subscription.revoked") {
+    let event;
+    try {
+      event = WebhookSubscriptionRevokedPayload$inboundSchema.parse(payload);
+    } catch (e) {
+      console.error("[polar/webhook] Signed subscription.revoked payload could not be parsed:", e);
+      return Response.json({ ok: true, ignored: true }, { status: 202 });
+    }
+    return handleRevoked(event.data);
+  }
+
+  // Subscribed to something extra in the dashboard. Nothing to do, and no reason to retry.
+  return Response.json({ ok: true });
+}
+
+/**
+ * Verifies a delivery against both of Polar's signing schemes and returns the signed JSON.
+ *
+ * Polar changed how the signing key is derived from the dashboard secret on 8 September 2026.
+ * A secret issued before then is keyed on the UTF-8 bytes of the whole `whsec_…` string; one
+ * issued on or after is plain Standard Webhooks, keyed on that string's base64 *decoding*. The
+ * same displayed secret therefore produces two completely different HMACs, and which one is
+ * correct depends only on the day the secret was minted.
+ *
+ * `validateEvent` in @polar-sh/sdk 0.49.0 knows only the older scheme: it base64-encodes the
+ * secret before handing it to the Standard Webhooks verifier, which decodes it straight back into
+ * the string's own bytes. Against a secret minted after the cut-off that can never match, and it
+ * fails as "No matching signature found" — indistinguishable from simply holding the wrong secret,
+ * which is an afternoon of rotating perfectly good credentials to find out.
+ *
+ * Polar's own remedy is an SDK 1.0 alpha that tries both keys. Trying both here costs one extra
+ * HMAC on a delivery that was going to be refused anyway, and keeps a pre-release major off the
+ * path that takes people's money.
+ */
+function verifyDelivery(body: string, headers: Record<string, string>): unknown {
+  const secret = webhookSecret();
+
+  // Standard Webhooks, as issued from 8 September 2026: the library strips `whsec_` and
+  // base64-decodes the rest into the key.
+  try {
+    return new Webhook(secret).verify(body, headers);
+  } catch (e) {
+    if (!(e instanceof WebhookVerificationError)) throw e;
+  }
+
+  // Polar's older scheme. Pre-encoding is what the SDK does, and it round-trips through the
+  // library's own decode to leave the key as the secret's literal bytes.
+  return new Webhook(Buffer.from(secret, "utf-8").toString("base64")).verify(body, headers);
 }
 
 /**
@@ -115,8 +172,8 @@ function secretFingerprint(): string {
     return `sha256:${digest} len=${secret.length}`;
   } catch {
     // `webhookSecret()` throws when the variable is unset, which cannot reach this branch — an
-    // unset secret fails before `validateEvent` and leaves as a 202. Worth reporting rather than
-    // swallowing: seeing it means the environment changed under a running request.
+    // unset secret fails before any signature is checked and leaves as a 500. Worth reporting
+    // rather than swallowing: seeing it means the environment changed under a running request.
     return "<not set>";
   }
 }
